@@ -1,13 +1,11 @@
 import { Link } from "react-router-dom";
-import { FaPercent } from "react-icons/fa";
+import logo from "../assets/logo.png";
 
 export default function PublicHeader() {
   return (
     <header className="topbar">
       <div className="brand">
-        <div className="brand-icon">
-          <FaPercent />
-        </div>
+        <img src={logo} alt="logo dealspot" className="brand-logo"/>
         <span>DealSpot</span>
       </div>
 

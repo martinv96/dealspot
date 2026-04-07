@@ -35,7 +35,7 @@ export default function LoginPage() {
     <div className="page-shell auth-page">
       <PublicHeader />
 
-      <main className="auth-main">
+      <main className="page-main auth-main">
         <h2 className="auth-title">Connexion</h2>
         <p className="auth-subtitle">Accéder à votre compte DealSpot</p>
 

@@ -52,7 +52,7 @@ export default function RegisterPage() {
     <div className="page-shell auth-page">
       <PublicHeader />
 
-      <main className="auth-main">
+      <main className="page-main auth-main">
         <h2 className="auth-title">Inscription</h2>
         <p className="auth-subtitle">Créer votre compte gratuitement</p>
 

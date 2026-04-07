@@ -9,17 +9,23 @@ export function AuthProvider({ children }) {
 
   const isAuthenticated = !!user;
 
+  async function refreshUser() {
+    const { data } = await api.get("/auth/me");
+    setUser(data.user);
+    return data.user;
+  }
+
   useEffect(() => {
     async function bootstrap() {
       const token = localStorage.getItem("dealspot_token");
+
       if (!token) {
         setLoading(false);
         return;
       }
 
       try {
-        const { data } = await api.get("/auth/me");
-        setUser(data.user);
+        await refreshUser();
       } catch {
         localStorage.removeItem("dealspot_token");
         setUser(null);
@@ -41,13 +47,34 @@ export function AuthProvider({ children }) {
     setUser(data.user);
   }
 
+  async function updateProfile(payload) {
+    const { data } = await api.put("/auth/me", payload);
+    setUser(data.user);
+    return data;
+  }
+
+  async function changePassword(payload) {
+    const { data } = await api.put("/auth/me/password", payload);
+    return data;
+  }
+
   function logout() {
     localStorage.removeItem("dealspot_token");
     setUser(null);
   }
 
   const value = useMemo(
-    () => ({ user, loading, isAuthenticated, register, login, logout }),
+    () => ({
+      user,
+      loading,
+      isAuthenticated,
+      register,
+      login,
+      logout,
+      refreshUser,
+      updateProfile,
+      changePassword
+    }),
     [user, loading, isAuthenticated]
   );
 
@@ -56,6 +83,10 @@ export function AuthProvider({ children }) {
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth doit être utilisé dans AuthProvider.");
+
+  if (!ctx) {
+    throw new Error("useAuth doit être utilisé dans AuthProvider.");
+  }
+
   return ctx;
 }

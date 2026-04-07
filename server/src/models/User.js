@@ -7,39 +7,43 @@ export default (sequelize) => {
       id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
-        primaryKey: true
+        primaryKey: true,
       },
       pseudo: {
         type: DataTypes.STRING(50),
-        allowNull: false
+        allowNull: false,
       },
       email: {
         type: DataTypes.STRING(100),
         allowNull: false,
-        unique: true
+        unique: true,
+      },
+      telephone: {
+        type: DataTypes.STRING(30),
+        allowNull: true,
       },
       mot_de_passe: {
         type: DataTypes.STRING(255),
-        allowNull: false
+        allowNull: false,
       },
       role: {
         type: DataTypes.ENUM("acheteur", "vendeur", "admin"),
         allowNull: false,
-        defaultValue: "acheteur"
+        defaultValue: "acheteur",
       },
       date_inscription: {
         type: DataTypes.DATE,
         allowNull: false,
-        defaultValue: DataTypes.NOW
+        defaultValue: DataTypes.NOW,
       },
       localisation: {
         type: DataTypes.STRING(255),
-        allowNull: true
-      }
+        allowNull: true,
+      },
     },
     {
       tableName: "users",
-      timestamps: false
-    }
+      timestamps: false,
+    },
   );
 };

@@ -7,8 +7,10 @@ function userDto(user) {
     id: user.id,
     pseudo: user.pseudo,
     email: user.email,
+    telephone: user.telephone,
     role: user.role,
-    localisation: user.localisation
+    localisation: user.localisation,
+    date_inscription: user.date_inscription
   };
 }
 
@@ -40,6 +42,7 @@ export async function register(req, res) {
       user: userDto(user)
     });
   } catch (error) {
+    console.error("Erreur register:", error);
     return res.status(500).json({ message: "Erreur serveur à l'inscription." });
   }
 }
@@ -73,6 +76,7 @@ export async function login(req, res) {
       user: userDto(user)
     });
   } catch (error) {
+    console.error("Erreur login:", error);
     return res.status(500).json({ message: "Erreur serveur à la connexion." });
   }
 }
@@ -87,6 +91,80 @@ export async function me(req, res) {
 
     return res.json({ user: userDto(user) });
   } catch (error) {
+    console.error("Erreur me:", error);
     return res.status(500).json({ message: "Erreur serveur." });
+  }
+}
+
+export async function updateMe(req, res) {
+  try {
+    const { pseudo, email, telephone, localisation } = req.body;
+    const user = await User.findByPk(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "Utilisateur introuvable." });
+    }
+
+    if (!pseudo || !email) {
+      return res.status(400).json({ message: "Pseudo et email sont requis." });
+    }
+
+    const existing = await User.findOne({ where: { email } });
+
+    if (existing && existing.id !== user.id) {
+      return res.status(409).json({ message: "Cet email est déjà utilisé." });
+    }
+
+    user.pseudo = pseudo;
+    user.email = email;
+    user.telephone = telephone || null;
+    user.localisation = localisation || null;
+
+    await user.save();
+
+    return res.json({
+      message: "Profil mis à jour.",
+      user: userDto(user)
+    });
+  } catch (error) {
+    console.error("Erreur updateMe:", error);
+    return res.status(500).json({ message: "Erreur serveur lors de la mise à jour du profil." });
+  }
+}
+
+export async function changePassword(req, res) {
+  try {
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+    const user = await User.findByPk(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "Utilisateur introuvable." });
+    }
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      return res.status(400).json({ message: "Tous les champs sont requis." });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ message: "La confirmation du mot de passe ne correspond pas." });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({ message: "Le nouveau mot de passe doit contenir au moins 8 caractères." });
+    }
+
+    const valid = await bcrypt.compare(currentPassword, user.mot_de_passe);
+
+    if (!valid) {
+      return res.status(401).json({ message: "Mot de passe actuel incorrect." });
+    }
+
+    user.mot_de_passe = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    return res.json({ message: "Mot de passe modifié avec succès." });
+  } catch (error) {
+    console.error("Erreur changePassword:", error);
+    return res.status(500).json({ message: "Erreur serveur lors du changement de mot de passe." });
   }
 }
