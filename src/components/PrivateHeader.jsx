@@ -7,7 +7,7 @@ import {
   FaUser,
   FaSignOutAlt
 } from "react-icons/fa";
-import logo from "../assets/logo.png";
+import logo from "../assets/logo3.png";
 import { useAuth } from "../context/AuthContext";
 
 export default function PrivateHeader() {
@@ -21,10 +21,10 @@ export default function PrivateHeader() {
 
   return (
     <header className="topbar">
-      <div className="brand">
+      <Link to="/app" className="brand">
         <img src={logo} alt="logo Dealspot" className="brand-logo" />
         <span>DealSpot</span>
-      </div>
+      </Link>
 
       <nav className="nav nav-private">
         <Link to="/app" className="nav-link"><FaHome /> Accueil</Link>
