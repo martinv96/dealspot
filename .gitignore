@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Ignorer les images uploadées dans le dossier server/uploads
+server/uploads/*
+!server/uploads/.gitkeep
