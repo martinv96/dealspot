@@ -28,7 +28,8 @@ export default function PrivateHeader() {
 
       <nav className="nav nav-private">
         <Link to="/app" className="nav-link"><FaHome /> Accueil</Link>
-        <button className="nav-link nav-logout" type="button"><FaRegFileAlt /> Mes annonces</button>
+        <Link to="/mes-annonces" className="nav-link"><FaRegFileAlt /> Mes annonces</Link>
+        <Link to="/creer-annonce" className="nav-link"><FaRegHeart /> Créer une annonce</Link>
         <button className="nav-link nav-logout" type="button"><FaRegHeart /> Favoris</button>
         <button className="nav-link nav-logout" type="button"><FaRegCommentDots /> Messages</button>
         <Link to="/profil" className="nav-link"><FaUser /> Profil</Link>
