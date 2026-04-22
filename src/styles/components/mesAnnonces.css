@@ -1,0 +1,100 @@
+.mes-annonces-page {
+  padding: 34px 38px 0;
+  flex: 1;
+}
+
+.mes-annonces-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.mes-annonces-head h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.mes-annonces-head p {
+  color: #6f6f6f;
+  font-size: 0.95rem;
+}
+
+.mes-annonces-tabs {
+  width: fit-content;
+  display: inline-flex;
+  gap: 6px;
+  background: #d7d7d7;
+  border-radius: 999px;
+  padding: 3px;
+  margin-bottom: 18px;
+}
+
+.mes-tab {
+  min-width: 126px;
+  height: 30px;
+  border-radius: 999px;
+  background: transparent;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0 10px;
+}
+
+.mes-tab.active {
+  background: #fff;
+}
+
+.mes-annonces-list .listing-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.empty-listing-message {
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+  padding: 14px;
+  color: #6f6f6f;
+  font-size: 0.92rem;
+}
+
+@media (max-width: 1000px) {
+  .mes-annonces-list .listing-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .mes-annonces-page {
+    padding: 24px 16px 0;
+  }
+
+  .mes-annonces-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .mes-annonces-head h1 {
+    font-size: 1.6rem;
+  }
+
+  .mes-annonces-tabs {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+    border-radius: 10px;
+    padding: 8px;
+  }
+
+  .mes-tab {
+    width: 100%;
+    border-radius: 8px;
+    text-align: left;
+    padding: 0 12px;
+  }
+
+  .mes-annonces-list .listing-grid {
+    grid-template-columns: 1fr;
+  }
+}
