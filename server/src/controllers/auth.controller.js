@@ -1,6 +1,15 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { User } from "../models/index.js";
+import db from "../models/index.js";
+const User = db.User;
+
+/**
+ * Utilitaire pour valider la force du mot de passe
+ */
+function isPasswordSecure(password) {
+  const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  return regex.test(password);
+}
 
 function userDto(user) {
   return {
@@ -20,6 +29,13 @@ export async function register(req, res) {
 
     if (!pseudo || !email || !password) {
       return res.status(400).json({ message: "Pseudo, email et mot de passe sont requis." });
+    }
+
+    // Validation de la sécurité du mot de passe
+    if (!isPasswordSecure(password)) {
+      return res.status(400).json({ 
+        message: "Le mot de passe doit contenir au moins 8 caractères, une majuscule, un chiffre et un caractère spécial (@$!%*?&)." 
+      });
     }
 
     const existing = await User.findOne({ where: { email } });
@@ -149,8 +165,11 @@ export async function changePassword(req, res) {
       return res.status(400).json({ message: "La confirmation du mot de passe ne correspond pas." });
     }
 
-    if (newPassword.length < 8) {
-      return res.status(400).json({ message: "Le nouveau mot de passe doit contenir au moins 8 caractères." });
+    // Validation de la sécurité du nouveau mot de passe
+    if (!isPasswordSecure(newPassword)) {
+      return res.status(400).json({ 
+        message: "Le nouveau mot de passe doit contenir au moins 8 caractères, une majuscule, un chiffre et un caractère spécial (@$!%*?&)." 
+      });
     }
 
     const valid = await bcrypt.compare(currentPassword, user.mot_de_passe);
