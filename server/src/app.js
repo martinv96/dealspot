@@ -32,6 +32,23 @@ app.get("/api/health", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/annonces", annonceRoutes);
 
+app.use((error, _req, res, next) => {
+  if (!error) {
+    next();
+    return;
+  }
+
+  if (error.name === "MulterError") {
+    return res.status(400).json({ message: "Upload invalide: " + error.message });
+  }
+
+  if (error.message && error.message.includes("fichiers image")) {
+    return res.status(400).json({ message: error.message });
+  }
+
+  return res.status(500).json({ message: "Erreur serveur.", error: error.message });
+});
+
 const PORT = Number(process.env.PORT) || 4000;
 
 async function start() {
