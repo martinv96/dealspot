@@ -5,6 +5,10 @@ import App from "./App";
 import { AuthProvider } from "./context/AuthContext";
 import "./styles/app.css";
 
+if (typeof window !== "undefined" && typeof window.process === "undefined") {
+  window.process = { env: {} };
+}
+
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <BrowserRouter>

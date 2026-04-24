@@ -200,9 +200,11 @@ export const updateMyAnnonce = async (req, res) => {
       return res.status(403).json({ message: "Modification non autorisée." });
     }
 
-    const { titre, description, prix, categorie, localisation, statut } = req.body;
-    const uploadedImages = getUploadedImageUrls(req);
+    // On récupère 'existingImages' depuis le body (envoyé par le front)
+    const { titre, description, prix, categorie, localisation, statut, existingImages } = req.body;
+    const newUploadedImages = getUploadedImageUrls(req);
 
+    // Mise à jour des champs textes
     annonce.titre = titre ?? annonce.titre;
     annonce.description = description ?? annonce.description;
     annonce.prix = prix ?? annonce.prix;
@@ -210,9 +212,25 @@ export const updateMyAnnonce = async (req, res) => {
     annonce.localisation = localisation ?? annonce.localisation;
     annonce.statut = statut ?? annonce.statut;
 
-    if (uploadedImages.length > 0) {
-      annonce.images = uploadedImages;
+    // GESTION DES IMAGES
+    let finalImages = [];
+
+    // 1. On prend les images que le front nous dit de garder
+    if (existingImages) {
+      // Si existingImages est envoyé via FormData, c'est parfois une string JSON, on la parse
+      finalImages = typeof existingImages === 'string' ? JSON.parse(existingImages) : existingImages;
+    } else {
+      // Si le front n'envoie rien du tout, on garde les images actuelles par défaut
+      finalImages = Array.isArray(annonce.images) ? annonce.images : [];
     }
+
+    // 2. On ajoute les nouvelles photos uploadées
+    if (newUploadedImages.length > 0) {
+      finalImages = [...finalImages, ...newUploadedImages];
+    }
+
+    // 3. On applique la limite de 5 et on enregistre
+    annonce.images = finalImages.slice(0, 5);
 
     await annonce.save();
     return res.json({ message: "Annonce modifiée avec succès.", annonce });

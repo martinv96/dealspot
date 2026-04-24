@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { FaEdit, FaMapMarkerAlt, FaRegCalendarAlt, FaTrashAlt, FaUserCircle } from "react-icons/fa";
+import { FaEdit, FaMapMarkerAlt, FaRegCalendarAlt, FaTrashAlt, FaUserCircle, FaTimes } from "react-icons/fa";
 import PublicHeader from "../components/PublicHeader";
 import PrivateHeader from "../components/PrivateHeader";
 import SiteFooter from "../components/SiteFooter";
@@ -13,17 +13,13 @@ const API_ORIGIN = "http://localhost:4000";
 
 function formatPrice(value) {
   const numberValue = Number(value);
-  if (Number.isNaN(numberValue)) {
-    return value;
-  }
+  if (Number.isNaN(numberValue)) return value;
   return numberValue.toLocaleString("fr-FR");
 }
 
 function formatDate(rawDate) {
   const date = new Date(rawDate);
-  if (Number.isNaN(date.getTime())) {
-    return "Date inconnue";
-  }
+  if (Number.isNaN(date.getTime())) return "Date inconnue";
   return new Intl.DateTimeFormat("fr-FR", {
     day: "numeric",
     month: "long",
@@ -35,20 +31,12 @@ function cleanImages(rawImages) {
   if (!Array.isArray(rawImages) || rawImages.length === 0) {
     return [FALLBACK_IMAGE];
   }
-
-  const filtered = rawImages
+  return rawImages
     .filter((value) => typeof value === "string" && value.trim().length > 0)
     .map((value) => {
-      if (value.startsWith("http://") || value.startsWith("https://") || value.startsWith("data:")) {
-        return value;
-      }
-      if (value.startsWith("/uploads/")) {
-        return API_ORIGIN + value;
-      }
-      return value;
+      if (value.startsWith("http") || value.startsWith("data:")) return value;
+      return API_ORIGIN + (value.startsWith("/") ? "" : "/") + value;
     });
-
-  return filtered.length > 0 ? filtered : [FALLBACK_IMAGE];
 }
 
 export default function AnnonceDetailPage() {
@@ -61,6 +49,10 @@ export default function AnnonceDetailPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+
+  // États pour le formulaire d'édition
   const [editForm, setEditForm] = useState({
     titre: "",
     description: "",
@@ -69,15 +61,13 @@ export default function AnnonceDetailPage() {
     localisation: "",
     statut: "active"
   });
+  const [existingImagesToKeep, setExistingImagesToKeep] = useState([]);
   const [editFiles, setEditFiles] = useState([]);
-  const [error, setError] = useState("");
-  const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   useEffect(() => {
     async function loadAnnonce() {
       try {
         setIsLoading(true);
-        setError("");
         const response = await api.get("/annonces/" + id);
         const fetchedAnnonce = response.data?.annonce || null;
         setAnnonce(fetchedAnnonce);
@@ -91,6 +81,7 @@ export default function AnnonceDetailPage() {
             localisation: fetchedAnnonce.localisation || "",
             statut: fetchedAnnonce.statut || "active"
           });
+          setExistingImagesToKeep(fetchedAnnonce.images || []);
         }
       } catch (loadError) {
         setError(loadError?.response?.data?.message || "Impossible de charger cette annonce.");
@@ -98,35 +89,33 @@ export default function AnnonceDetailPage() {
         setIsLoading(false);
       }
     }
-
     loadAnnonce();
   }, [id]);
 
-  const images = useMemo(() => cleanImages(annonce?.images), [annonce?.images]);
+  // Les images affichées changent dynamiquement si on est en train d'éditer
+  const currentImages = useMemo(() => {
+    const list = isEditing ? existingImagesToKeep : (annonce?.images || []);
+    return cleanImages(list);
+  }, [annonce, isEditing, existingImagesToKeep]);
 
   useEffect(() => {
-    if (activeImageIndex >= images.length) {
+    if (activeImageIndex >= currentImages.length) {
       setActiveImageIndex(0);
     }
-  }, [activeImageIndex, images.length]);
+  }, [activeImageIndex, currentImages.length]);
 
   const isOwner = !!(isAuthenticated && user?.id && annonce?.user_id === user.id);
+
+  const handleRemoveExistingImage = (indexToRemove) => {
+    setExistingImagesToKeep((prev) => prev.filter((_, i) => i !== indexToRemove));
+  };
 
   function handleEditChange(event) {
     const { name, value } = event.target;
     setEditForm((current) => ({ ...current, [name]: value }));
   }
 
-  function handleEditFileChange(event) {
-    const files = Array.from(event.target.files || []).slice(0, 5);
-    setEditFiles(files);
-  }
-
   function handleCancelEdit() {
-    if (!annonce) {
-      return;
-    }
-
     setEditForm({
       titre: annonce.titre || "",
       description: annonce.description || "",
@@ -135,66 +124,43 @@ export default function AnnonceDetailPage() {
       localisation: annonce.localisation || "",
       statut: annonce.statut || "active"
     });
+    setExistingImagesToKeep(annonce.images || []);
     setEditFiles([]);
     setIsEditing(false);
   }
 
   async function handleSaveEdit() {
-    if (!isOwner || !annonce) {
-      return;
-    }
-
     try {
       setIsSaving(true);
       setError("");
-
       const payload = new FormData();
-      payload.append("titre", editForm.titre);
-      payload.append("description", editForm.description);
-      payload.append("prix", editForm.prix);
-      payload.append("categorie", editForm.categorie);
-      payload.append("localisation", editForm.localisation);
-      payload.append("statut", editForm.statut);
+      Object.keys(editForm).forEach(key => payload.append(key, editForm[key]));
+      
+      // On envoie la liste des images conservées
+      payload.append("existingImages", JSON.stringify(existingImagesToKeep));
+      
+      editFiles.forEach((file) => payload.append("images", file));
 
-      editFiles.forEach((file) => {
-        payload.append("images", file);
-      });
-
-      const response = await api.put("/annonces/" + annonce.id, payload, {
-        headers: { "Content-Type": "multipart/form-data" }
-      });
-
-      const updatedAnnonce = response.data?.annonce;
-      if (updatedAnnonce) {
-        setAnnonce(updatedAnnonce);
-      }
+      const response = await api.put("/annonces/" + id, payload);
+      setAnnonce(response.data.annonce);
+      setExistingImagesToKeep(response.data.annonce.images || []);
       setEditFiles([]);
-      setActiveImageIndex(0);
       setIsEditing(false);
-    } catch (saveError) {
-      setError(saveError?.response?.data?.message || "Modification impossible.");
+    } catch {
+      setError("Modification impossible.");
     } finally {
       setIsSaving(false);
     }
   }
 
   async function handleDelete() {
-    if (!isOwner || !annonce) {
-      return;
-    }
-
-    const confirmDelete = window.confirm("Supprimer cette annonce ? Cette action est définitive.");
-    if (!confirmDelete) {
-      return;
-    }
-
+    if (!window.confirm("Supprimer cette annonce ?")) return;
     try {
       setIsDeleting(true);
-      await api.delete("/annonces/" + annonce.id);
+      await api.delete("/annonces/" + id);
       navigate("/mes-annonces", { replace: true });
-    } catch (deleteError) {
-      setError(deleteError?.response?.data?.message || "Suppression impossible.");
-    } finally {
+    } catch {
+      setError("Suppression impossible.");
       setIsDeleting(false);
     }
   }
@@ -204,140 +170,113 @@ export default function AnnonceDetailPage() {
       {isAuthenticated ? <PrivateHeader /> : <PublicHeader />}
 
       <main className="page-main annonce-detail-page">
-        {isLoading ? <p className="center-loader">Chargement de l'annonce...</p> : null}
-        {!isLoading && error ? <p className="form-error">{error}</p> : null}
-
-        {!isLoading && !error && annonce ? (
+        {isLoading ? (
+          <p className="center-loader">Chargement...</p>
+        ) : error ? (
+          <p className="form-error">{error}</p>
+        ) : annonce ? (
           <>
             <section className="annonce-detail-breadcrumb">
               <Link to={isAuthenticated ? "/app" : "/"}>Accueil</Link>
               <span>/</span>
-              <span>{annonce.categorie || "Catégorie"}</span>
+              <span>{annonce.categorie}</span>
               <span>/</span>
               <span>{annonce.titre}</span>
             </section>
 
             <section className="annonce-detail-grid">
               <div className="annonce-media-card">
-                <img
-                  src={images[activeImageIndex] || FALLBACK_IMAGE}
-                  alt={annonce.titre}
-                  className="annonce-main-image"
-                />
+                <img src={currentImages[activeImageIndex]} alt="Main" className="annonce-main-image" />
 
                 <div className="annonce-thumbs-row">
-                  {images.map((image, index) => (
-                    <button
-                      key={index}
-                      type="button"
-                      className={"annonce-thumb" + (index === activeImageIndex ? " active" : "")}
-                      onClick={() => setActiveImageIndex(index)}
-                    >
-                      <img src={image} alt={annonce.titre + " visuel " + (index + 1)} />
-                    </button>
+                  {currentImages.map((image, index) => (
+                    <div key={index} style={{ position: 'relative', display: 'inline-block' }}>
+                      <button
+                        type="button"
+                        className={"annonce-thumb" + (index === activeImageIndex ? " active" : "")}
+                        onClick={() => setActiveImageIndex(index)}
+                      >
+                        <img src={image} alt="miniature" />
+                      </button>
+
+                      {/* LE BOUTON ROUGE SUR LA MINIATURE (Uniquement en mode édition) */}
+                      {isEditing && image !== FALLBACK_IMAGE && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveExistingImage(index);
+                          }}
+                          style={{
+                            position: 'absolute', top: '-5px', right: '-5px',
+                            background: 'red', color: 'white', border: 'none',
+                            borderRadius: '50%', width: '18px', height: '18px',
+                            cursor: 'pointer', display: 'flex', alignItems: 'center',
+                            justifyContent: 'center', fontSize: '10px', zIndex: 5
+                          }}
+                        >
+                          <FaTimes />
+                        </button>
+                      )}
+                    </div>
                   ))}
                 </div>
 
                 <div className="annonce-description-card">
                   <h3>Description</h3>
-                  <p>{annonce.description}</p>
+                  {isEditing ? (
+                    <textarea name="description" value={editForm.description} onChange={handleEditChange} />
+                  ) : (
+                    <p>{annonce.description}</p>
+                  )}
                 </div>
               </div>
 
               <aside className="annonce-side-col">
                 <div className="annonce-summary-card">
-                  {isOwner && isEditing ? (
+                  {isEditing ? (
                     <div className="annonce-edit-form">
                       <label>Titre</label>
                       <input name="titre" value={editForm.titre} onChange={handleEditChange} />
-
-                      <label>Description</label>
-                      <textarea
-                        name="description"
-                        value={editForm.description}
-                        onChange={handleEditChange}
-                      />
-
-                      <label>Prix</label>
+                      <label>Prix (€)</label>
                       <input name="prix" type="number" value={editForm.prix} onChange={handleEditChange} />
-
-                      <label>Catégorie</label>
-                      <input name="categorie" value={editForm.categorie} onChange={handleEditChange} />
-
-                      <label>Localisation</label>
-                      <input
-                        name="localisation"
-                        value={editForm.localisation}
-                        onChange={handleEditChange}
-                      />
-
-                      <label>Statut</label>
-                      <select name="statut" value={editForm.statut} onChange={handleEditChange}>
-                        <option value="active">Active</option>
-                        <option value="expirée">Vendue</option>
-                        <option value="brouillon">Brouillon</option>
-                      </select>
-
-                      <label>Nouvelles photos (optionnel, remplace les anciennes)</label>
-                      <input type="file" accept="image/*" multiple onChange={handleEditFileChange} />
-
-                      <div className="annonce-owner-actions">
-                        <button
-                          type="button"
-                          className="btn btn-primary"
-                          disabled={isSaving}
-                          onClick={handleSaveEdit}
-                        >
-                          {isSaving ? "Enregistrement..." : "Enregistrer les modifications"}
+                      <label>Ajouter des photos</label>
+                      <input type="file" multiple onChange={(e) => setEditFiles(Array.from(e.target.files))} />
+                      
+                      <div className="annonce-owner-actions" style={{ marginTop: '1rem' }}>
+                        <button className="btn btn-primary" onClick={handleSaveEdit} disabled={isSaving}>
+                          {isSaving ? "Enregistrement..." : "Enregistrer"}
                         </button>
-                        <button type="button" className="btn btn-outline" onClick={handleCancelEdit}>
-                          Annuler
-                        </button>
+                        <button className="btn btn-outline" onClick={handleCancelEdit}>Annuler</button>
                       </div>
                     </div>
                   ) : (
                     <>
                       <h1>{annonce.titre}</h1>
                       <p className="annonce-price">{formatPrice(annonce.prix)} €</p>
-                      <p className="annonce-meta"><FaMapMarkerAlt /> {annonce.localisation || "Non précisée"}</p>
+                      <p className="annonce-meta"><FaMapMarkerAlt /> {annonce.localisation}</p>
                       <p className="annonce-meta"><FaRegCalendarAlt /> Publiée le {formatDate(annonce.date_publication)}</p>
                     </>
                   )}
 
-                  {isOwner ? (
+                  {isOwner && !isEditing && (
                     <div className="annonce-owner-actions">
-                      {!isEditing ? (
-                        <button
-                          type="button"
-                          className="btn btn-primary annonce-edit-btn"
-                          onClick={() => setIsEditing(true)}
-                        >
-                          <FaEdit /> Modifier l'annonce
-                        </button>
-                      ) : null}
-
-                      <button
-                        type="button"
-                        className="btn btn-outline annonce-delete-btn"
-                        disabled={isDeleting || isEditing}
-                        onClick={handleDelete}
-                      >
-                        <FaTrashAlt /> {isDeleting ? "Suppression..." : "Supprimer l'annonce"}
+                      <button className="btn btn-primary" onClick={() => setIsEditing(true)}>
+                        <FaEdit /> Modifier
+                      </button>
+                      <button className="btn btn-outline" onClick={handleDelete} disabled={isDeleting}>
+                        <FaTrashAlt /> {isDeleting ? "..." : "Supprimer"}
                       </button>
                     </div>
-                  ) : (
-                    <button type="button" className="btn btn-primary" disabled>
-                      Contacter le vendeur
-                    </button>
                   )}
                 </div>
 
                 <div className="annonce-vendeur-card">
                   <h3>Vendeur</h3>
                   <div className="annonce-vendeur-row">
-                    <FaUserCircle />
+                    <FaUserCircle size={30} />
                     <div>
-                      <strong>{annonce.vendeur?.pseudo || "Utilisateur DealSpot"}</strong>
+                      <strong>{annonce.vendeur?.pseudo || "Utilisateur"}</strong>
                       <p>Membre depuis {formatDate(annonce.vendeur?.date_inscription)}</p>
                     </div>
                   </div>
@@ -347,7 +286,6 @@ export default function AnnonceDetailPage() {
           </>
         ) : null}
       </main>
-
       <SiteFooter />
     </div>
   );
