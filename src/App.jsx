@@ -10,6 +10,7 @@ import MyAnnoncesPage from "./pages/MyAnnoncesPage";
 import AnnonceDetailPage from "./pages/AnnonceDetailPage";
 import UserProfilePage from "./pages/UserProfilePage";
 import FavoritesPage from "./pages/FavoritesPage";
+import MessagesPage from "./pages/MessagesPage";
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -32,6 +33,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <FavoritesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/messages"
+              element={
+                <ProtectedRoute>
+                  <MessagesPage />
                 </ProtectedRoute>
               }
             />

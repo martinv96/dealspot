@@ -105,9 +105,12 @@ export default function UserProfilePage() {
                     )}
                   </div>
 
-                  <button className="btn btn-contact user-profile-contact-btn">
+                  <Link
+                    to={`/messages?userId=${profileUser.id}&pseudo=${encodeURIComponent(profileUser.pseudo || "Utilisateur")}`}
+                    className="btn btn-contact user-profile-contact-btn"
+                  >
                     Contacter {profileUser.pseudo}
-                  </button>
+                  </Link>
 
                   <button className="user-profile-report-btn">
                     <FaFlag /> Signaler cet utilisateur

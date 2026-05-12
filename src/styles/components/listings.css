@@ -219,6 +219,77 @@
   resize: vertical;
 }
 
+.annonce-location-card {
+  margin-top: 14px;
+  padding: 14px;
+}
+
+.annonce-location-card h3 {
+  font-size: 0.95rem;
+  margin-bottom: 10px;
+}
+
+.annonce-leaflet-wrap {
+  border: 1px solid #d8dbe4;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #eef1f6;
+}
+
+.annonce-leaflet-map {
+  height: 320px;
+  width: 100%;
+}
+
+.annonce-location-note {
+  margin-top: 10px;
+  text-align: center;
+}
+
+.annonce-location-note strong {
+  display: block;
+  font-size: 0.95rem;
+  color: #4c5c78;
+  margin-bottom: 6px;
+}
+
+.annonce-location-note p {
+  font-size: 0.82rem;
+  color: #728099;
+  line-height: 1.4;
+}
+
+.annonce-location-map-placeholder {
+  min-height: 210px;
+  border-radius: 8px;
+  background: #e6e8ee;
+  border: 1px solid #d8dbe4;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  color: #728099;
+  padding: 18px;
+}
+
+.annonce-location-map-placeholder svg {
+  font-size: 2rem;
+  margin-bottom: 8px;
+  color: #8390a8;
+}
+
+.annonce-location-map-placeholder strong {
+  display: block;
+  font-size: 1rem;
+  color: #4c5c78;
+  margin-bottom: 6px;
+}
+
+.annonce-location-map-placeholder p {
+  font-size: 0.82rem;
+  line-height: 1.4;
+  max-width: 380px;
+}
+
 .annonce-side-col {
   display: grid;
   align-content: start;

@@ -1,4 +1,5 @@
 import { FaPercent } from "react-icons/fa";
+import logo from "../assets/logo3.png";
 
 export default function SiteFooter() {
   return (
@@ -7,7 +8,7 @@ export default function SiteFooter() {
         <div>
           <div className="brand footer-brand">
             <div className="brand-icon">
-              <FaPercent />
+              <img src={logo} alt="logo dealspot" className="brand-logo"/>
             </div>
             <span>DealSpot</span>
           </div>
