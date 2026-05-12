@@ -1,6 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { FaEdit, FaMapMarkerAlt, FaRegCalendarAlt, FaTrashAlt, FaUserCircle, FaTimes, FaHeart, FaRegHeart, FaShareAlt, FaCommentDots, FaFlag } from "react-icons/fa";
+import {
+  FaEdit,
+  FaMapMarkerAlt,
+  FaRegCalendarAlt,
+  FaTrashAlt,
+  FaUserCircle,
+  FaTimes,
+  FaHeart,
+  FaRegHeart,
+  FaShareAlt,
+  FaCommentDots,
+  FaFlag,
+} from "react-icons/fa";
 import { CircleMarker, MapContainer, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import PublicHeader from "../components/PublicHeader";
@@ -38,7 +50,7 @@ function formatDate(rawDate) {
   return new Intl.DateTimeFormat("fr-FR", {
     day: "numeric",
     month: "long",
-    year: "numeric"
+    year: "numeric",
   }).format(date);
 }
 
@@ -66,6 +78,7 @@ export default function AnnonceDetailPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [shareCopied, setShareCopied] = useState(false);
 
   // États pour le formulaire d'édition
   const [editForm, setEditForm] = useState({
@@ -74,12 +87,19 @@ export default function AnnonceDetailPage() {
     prix: "",
     categorie: "",
     localisation: "",
-    statut: "active"
+    statut: "active",
   });
   const [existingImagesToKeep, setExistingImagesToKeep] = useState([]);
   const [editFiles, setEditFiles] = useState([]);
   const [mapCenter, setMapCenter] = useState(null);
   const [mapStatus, setMapStatus] = useState("idle");
+
+  const [showSignalerModal, setShowSignalerModal] = useState(false);
+  const [signalerMotif, setSignalerMotif] = useState("");
+  const [signalerDesc, setSignalerDesc] = useState("");
+  const [signalerLoading, setSignalerLoading] = useState(false);
+  const [signalerSuccess, setSignalerSuccess] = useState("");
+  const [signalerError, setSignalerError] = useState("");
 
   useEffect(() => {
     async function loadAnnonce() {
@@ -96,12 +116,15 @@ export default function AnnonceDetailPage() {
             prix: fetchedAnnonce.prix || "",
             categorie: fetchedAnnonce.categorie || "",
             localisation: fetchedAnnonce.localisation || "",
-            statut: fetchedAnnonce.statut || "active"
+            statut: fetchedAnnonce.statut || "active",
           });
           setExistingImagesToKeep(fetchedAnnonce.images || []);
         }
       } catch (loadError) {
-        setError(loadError?.response?.data?.message || "Impossible de charger cette annonce.");
+        setError(
+          loadError?.response?.data?.message ||
+            "Impossible de charger cette annonce.",
+        );
       } finally {
         setIsLoading(false);
       }
@@ -111,7 +134,7 @@ export default function AnnonceDetailPage() {
 
   // Les images affichées changent dynamiquement si on est en train d'éditer
   const currentImages = useMemo(() => {
-    const list = isEditing ? existingImagesToKeep : (annonce?.images || []);
+    const list = isEditing ? existingImagesToKeep : annonce?.images || [];
     return cleanImages(list);
   }, [annonce, isEditing, existingImagesToKeep]);
 
@@ -121,7 +144,9 @@ export default function AnnonceDetailPage() {
     }
   }, [activeImageIndex, currentImages.length]);
 
-  const displayedLocalisation = (isEditing ? editForm.localisation : annonce?.localisation || "").trim();
+  const displayedLocalisation = (
+    isEditing ? editForm.localisation : annonce?.localisation || ""
+  ).trim();
 
   useEffect(() => {
     if (!displayedLocalisation) {
@@ -138,8 +163,8 @@ export default function AnnonceDetailPage() {
         const response = await fetch(url, {
           signal: controller.signal,
           headers: {
-            "Accept-Language": "fr"
-          }
+            "Accept-Language": "fr",
+          },
         });
 
         if (!response.ok) {
@@ -171,11 +196,17 @@ export default function AnnonceDetailPage() {
     };
   }, [displayedLocalisation]);
 
-  const isOwner = !!(isAuthenticated && user?.id && annonce?.user_id === user.id);
+  const isOwner = !!(
+    isAuthenticated &&
+    user?.id &&
+    annonce?.user_id === user.id
+  );
   const { isFavorite, toggleFavorite } = useFavorites();
 
   const handleRemoveExistingImage = (indexToRemove) => {
-    setExistingImagesToKeep((prev) => prev.filter((_, i) => i !== indexToRemove));
+    setExistingImagesToKeep((prev) =>
+      prev.filter((_, i) => i !== indexToRemove),
+    );
   };
 
   function handleEditChange(event) {
@@ -190,11 +221,18 @@ export default function AnnonceDetailPage() {
       prix: annonce.prix || "",
       categorie: annonce.categorie || "",
       localisation: annonce.localisation || "",
-      statut: annonce.statut || "active"
+      statut: annonce.statut || "active",
     });
     setExistingImagesToKeep(annonce.images || []);
     setEditFiles([]);
     setIsEditing(false);
+  }
+
+  function handleShare() {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2500);
+    });
   }
 
   async function handleSaveEdit() {
@@ -202,11 +240,13 @@ export default function AnnonceDetailPage() {
       setIsSaving(true);
       setError("");
       const payload = new FormData();
-      Object.keys(editForm).forEach(key => payload.append(key, editForm[key]));
-      
+      Object.keys(editForm).forEach((key) =>
+        payload.append(key, editForm[key]),
+      );
+
       // On envoie la liste des images conservées
       payload.append("existingImages", JSON.stringify(existingImagesToKeep));
-      
+
       editFiles.forEach((file) => payload.append("images", file));
 
       const response = await api.put("/annonces/" + id, payload);
@@ -233,6 +273,33 @@ export default function AnnonceDetailPage() {
     }
   }
 
+  async function handleSignaler(e) {
+    e.preventDefault();
+    setSignalerLoading(true);
+    setSignalerError("");
+    setSignalerSuccess("");
+    try {
+      await api.post("/reports", {
+        annonce_id: annonce.id,
+        motif: signalerMotif,
+        description: signalerDesc,
+      });
+      setSignalerSuccess("Signalement envoyé. Merci !");
+      setTimeout(() => {
+        setShowSignalerModal(false);
+        setSignalerMotif("");
+        setSignalerDesc("");
+        setSignalerSuccess("");
+      }, 2000);
+    } catch (err) {
+      setSignalerError(
+        err?.response?.data?.message || "Erreur lors du signalement.",
+      );
+    } finally {
+      setSignalerLoading(false);
+    }
+  }
+
   return (
     <div className="page-shell">
       {isAuthenticated ? <PrivateHeader /> : <PublicHeader />}
@@ -255,15 +322,25 @@ export default function AnnonceDetailPage() {
             <section className="annonce-detail-grid">
               <div className="annonce-media-card">
                 <div className="annonce-main-image-frame">
-                  <img src={currentImages[activeImageIndex]} alt="Main" className="annonce-main-image" />
+                  <img
+                    src={currentImages[activeImageIndex]}
+                    alt="Main"
+                    className="annonce-main-image"
+                  />
                 </div>
 
                 <div className="annonce-thumbs-row">
                   {currentImages.map((image, index) => (
-                    <div key={index} style={{ position: 'relative', display: 'inline-block' }}>
+                    <div
+                      key={index}
+                      style={{ position: "relative", display: "inline-block" }}
+                    >
                       <button
                         type="button"
-                        className={"annonce-thumb" + (index === activeImageIndex ? " active" : "")}
+                        className={
+                          "annonce-thumb" +
+                          (index === activeImageIndex ? " active" : "")
+                        }
                         onClick={() => setActiveImageIndex(index)}
                       >
                         <img src={image} alt="miniature" />
@@ -278,11 +355,21 @@ export default function AnnonceDetailPage() {
                             handleRemoveExistingImage(index);
                           }}
                           style={{
-                            position: 'absolute', top: '-5px', right: '-5px',
-                            background: 'red', color: 'white', border: 'none',
-                            borderRadius: '50%', width: '18px', height: '18px',
-                            cursor: 'pointer', display: 'flex', alignItems: 'center',
-                            justifyContent: 'center', fontSize: '10px', zIndex: 5
+                            position: "absolute",
+                            top: "-5px",
+                            right: "-5px",
+                            background: "red",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "50%",
+                            width: "18px",
+                            height: "18px",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: "10px",
+                            zIndex: 5,
                           }}
                         >
                           <FaTimes />
@@ -295,7 +382,11 @@ export default function AnnonceDetailPage() {
                 <div className="annonce-description-card">
                   <h3>Description</h3>
                   {isEditing ? (
-                    <textarea name="description" value={editForm.description} onChange={handleEditChange} />
+                    <textarea
+                      name="description"
+                      value={editForm.description}
+                      onChange={handleEditChange}
+                    />
                   ) : (
                     <p>{annonce.description}</p>
                   )}
@@ -303,7 +394,10 @@ export default function AnnonceDetailPage() {
 
                 <div className="annonce-location-card">
                   <h3>Localisation</h3>
-                  <div className="annonce-leaflet-wrap" aria-label="Carte de localisation de l'annonce">
+                  <div
+                    className="annonce-leaflet-wrap"
+                    aria-label="Carte de localisation de l'annonce"
+                  >
                     <MapContainer
                       center={mapCenter || DEFAULT_MAP_CENTER}
                       zoom={12}
@@ -318,19 +412,34 @@ export default function AnnonceDetailPage() {
                         <CircleMarker
                           center={mapCenter}
                           radius={10}
-                          pathOptions={{ color: "#2f6fd6", fillColor: "#2f6fd6", fillOpacity: 0.28, weight: 2 }}
+                          pathOptions={{
+                            color: "#2f6fd6",
+                            fillColor: "#2f6fd6",
+                            fillOpacity: 0.28,
+                            weight: 2,
+                          }}
                         />
                       ) : null}
                       <RecenterMap center={mapCenter} />
                     </MapContainer>
                   </div>
                   <div className="annonce-location-note">
-                    <strong>{displayedLocalisation || "Localisation non renseignee"}</strong>
+                    <strong>
+                      {displayedLocalisation || "Localisation non renseignee"}
+                    </strong>
                     <p>
-                      {mapStatus === "loading" ? "Recherche de la zone..." : null}
-                      {mapStatus === "not-found" ? "Zone introuvable. Verifiez la saisie." : null}
-                      {mapStatus === "error" ? "Impossible de charger la carte pour le moment." : null}
-                      {mapStatus === "ok" || mapStatus === "idle" || mapStatus === "empty"
+                      {mapStatus === "loading"
+                        ? "Recherche de la zone..."
+                        : null}
+                      {mapStatus === "not-found"
+                        ? "Zone introuvable. Verifiez la saisie."
+                        : null}
+                      {mapStatus === "error"
+                        ? "Impossible de charger la carte pour le moment."
+                        : null}
+                      {mapStatus === "ok" ||
+                      mapStatus === "idle" ||
+                      mapStatus === "empty"
                         ? "Remise en main propre a convenir entre acheteur et vendeur."
                         : null}
                     </p>
@@ -343,34 +452,70 @@ export default function AnnonceDetailPage() {
                   {isEditing ? (
                     <div className="annonce-edit-form">
                       <label>Titre</label>
-                      <input name="titre" value={editForm.titre} onChange={handleEditChange} />
+                      <input
+                        name="titre"
+                        value={editForm.titre}
+                        onChange={handleEditChange}
+                      />
                       <label>Prix (€)</label>
-                      <input name="prix" type="number" value={editForm.prix} onChange={handleEditChange} />
+                      <input
+                        name="prix"
+                        type="number"
+                        value={editForm.prix}
+                        onChange={handleEditChange}
+                      />
                       <label>Ajouter des photos</label>
-                      <input type="file" multiple onChange={(e) => setEditFiles(Array.from(e.target.files))} />
-                      
-                      <div className="annonce-owner-actions" style={{ marginTop: '1rem' }}>
-                        <button className="btn btn-primary" onClick={handleSaveEdit} disabled={isSaving}>
+                      <input
+                        type="file"
+                        multiple
+                        onChange={(e) =>
+                          setEditFiles(Array.from(e.target.files))
+                        }
+                      />
+
+                      <div
+                        className="annonce-owner-actions"
+                        style={{ marginTop: "1rem" }}
+                      >
+                        <button
+                          className="btn btn-primary"
+                          onClick={handleSaveEdit}
+                          disabled={isSaving}
+                        >
                           {isSaving ? "Enregistrement..." : "Enregistrer"}
                         </button>
-                        <button className="btn btn-outline" onClick={handleCancelEdit}>Annuler</button>
+                        <button
+                          className="btn btn-outline"
+                          onClick={handleCancelEdit}
+                        >
+                          Annuler
+                        </button>
                       </div>
                     </div>
                   ) : (
                     <>
                       <h1>{annonce.titre}</h1>
-                      <p className="annonce-price">{formatPrice(annonce.prix)} €</p>
+                      <p className="annonce-price">
+                        {formatPrice(annonce.prix)} €
+                      </p>
                       {annonce.categorie && (
-                        <span className="annonce-categorie-badge">{annonce.categorie}</span>
+                        <span className="annonce-categorie-badge">
+                          {annonce.categorie}
+                        </span>
                       )}
-                      <p className="annonce-meta"><FaMapMarkerAlt /> {annonce.localisation}</p>
-                      <p className="annonce-meta"><FaRegCalendarAlt /> Publié le {formatDate(annonce.date_publication)}</p>
+                      <p className="annonce-meta">
+                        <FaMapMarkerAlt /> {annonce.localisation}
+                      </p>
+                      <p className="annonce-meta">
+                        <FaRegCalendarAlt /> Publié le{" "}
+                        {formatDate(annonce.date_publication)}
+                      </p>
 
                       {!isOwner && isAuthenticated && (
                         <div className="annonce-visitor-actions">
                           <Link
                             to={`/messages?userId=${annonce.vendeur?.id}&annonceId=${annonce.id}&pseudo=${encodeURIComponent(
-                              annonce.vendeur?.pseudo || "Utilisateur"
+                              annonce.vendeur?.pseudo || "Utilisateur",
                             )}&annonceTitre=${encodeURIComponent(annonce.titre || "Annonce")}`}
                             className="btn btn-contact"
                           >
@@ -378,13 +523,30 @@ export default function AnnonceDetailPage() {
                           </Link>
                           <div className="annonce-visitor-secondary">
                             <button
-                              className={"btn btn-outline" + (isFavorite(annonce.id) ? " btn-fav-active" : "")}
+                              className={
+                                "btn btn-outline" +
+                                (isFavorite(annonce.id)
+                                  ? " btn-fav-active"
+                                  : "")
+                              }
                               onClick={() => toggleFavorite(annonce)}
                             >
-                              {isFavorite(annonce.id) ? <FaHeart /> : <FaRegHeart />}
-                              {isFavorite(annonce.id) ? "Sauvegardé" : "Favoris"}
+                              {isFavorite(annonce.id) ? (
+                                <FaHeart />
+                              ) : (
+                                <FaRegHeart />
+                              )}
+                              {isFavorite(annonce.id)
+                                ? "Sauvegardé"
+                                : "Favoris"}
                             </button>
-                            <button className="btn btn-outline"><FaShareAlt /> Partager</button>
+                            <button
+                              className="btn btn-outline"
+                              onClick={handleShare}
+                            >
+                              <FaShareAlt />{" "}
+                              {shareCopied ? "Lien copié !" : "Partager"}
+                            </button>
                           </div>
                         </div>
                       )}
@@ -393,10 +555,17 @@ export default function AnnonceDetailPage() {
 
                   {isOwner && !isEditing && (
                     <div className="annonce-owner-actions">
-                      <button className="btn btn-primary" onClick={() => setIsEditing(true)}>
+                      <button
+                        className="btn btn-primary"
+                        onClick={() => setIsEditing(true)}
+                      >
                         <FaEdit /> Modifier
                       </button>
-                      <button className="btn btn-outline" onClick={handleDelete} disabled={isDeleting}>
+                      <button
+                        className="btn btn-outline"
+                        onClick={handleDelete}
+                        disabled={isDeleting}
+                      >
                         <FaTrashAlt /> {isDeleting ? "..." : "Supprimer"}
                       </button>
                     </div>
@@ -408,24 +577,96 @@ export default function AnnonceDetailPage() {
                   <div className="annonce-vendeur-row">
                     <FaUserCircle size={30} />
                     <div>
-                      <strong>{annonce.vendeur?.pseudo || "Utilisateur"}</strong>
-                      <p>Membre depuis {formatDate(annonce.vendeur?.date_inscription)}</p>
+                      <strong>
+                        {annonce.vendeur?.pseudo || "Utilisateur"}
+                      </strong>
+                      <p>
+                        Membre depuis{" "}
+                        {formatDate(annonce.vendeur?.date_inscription)}
+                      </p>
                     </div>
                   </div>
                   {!isOwner && isAuthenticated && (
-                    <Link to={`/vendeurs/${annonce.vendeur?.id}`} className="btn btn-outline annonce-vendeur-profil">Voir le profil</Link>
+                    <Link
+                      to={`/vendeurs/${annonce.vendeur?.id}`}
+                      className="btn btn-outline annonce-vendeur-profil"
+                    >
+                      Voir le profil
+                    </Link>
                   )}
                 </div>
 
                 {!isOwner && isAuthenticated && (
-                  <button className="annonce-signaler-btn">
-                    <FaFlag /> Signaler cette annonce
+                  <button
+                    className="btn btn-outline btn-signaler"
+                    onClick={() => setShowSignalerModal(true)}
+                  >
+                    <FaFlag /> Signaler
                   </button>
                 )}
               </aside>
             </section>
           </>
         ) : null}
+
+        {showSignalerModal && (
+          <div
+            className="modal-overlay"
+            onClick={() => setShowSignalerModal(false)}
+          >
+            <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3>Signaler cette annonce</h3>
+                <button
+                  className="modal-close-btn"
+                  onClick={() => setShowSignalerModal(false)}
+                >
+                  <FaTimes />
+                </button>
+              </div>
+              <form onSubmit={handleSignaler} className="modal-form">
+                <label className="form-label">Motif *</label>
+                <select
+                  className="form-input"
+                  value={signalerMotif}
+                  onChange={(e) => setSignalerMotif(e.target.value)}
+                  required
+                >
+                  <option value="">-- Choisir un motif --</option>
+                  <option value="arnaque">Arnaque / Fraude</option>
+                  <option value="contenu_inapproprie">
+                    Contenu inapproprié
+                  </option>
+                  <option value="doublon">Doublon</option>
+                  <option value="prix_abusif">Prix abusif</option>
+                  <option value="autre">Autre</option>
+                </select>
+
+                <label className="form-label">Description (optionnelle)</label>
+                <textarea
+                  className="form-input"
+                  rows={4}
+                  placeholder="Décrivez le problème..."
+                  value={signalerDesc}
+                  onChange={(e) => setSignalerDesc(e.target.value)}
+                />
+
+                {signalerError && <p className="form-error">{signalerError}</p>}
+                {signalerSuccess && (
+                  <p className="form-success">{signalerSuccess}</p>
+                )}
+
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={signalerLoading || !signalerMotif}
+                >
+                  {signalerLoading ? "Envoi..." : "Envoyer le signalement"}
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
       </main>
       <SiteFooter />
     </div>

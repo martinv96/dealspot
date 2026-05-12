@@ -1,0 +1,150 @@
+.categories-section {
+  text-align: center;
+  margin: 40px auto;
+  padding: 30px 20px;
+  background: #f8f8f8;
+}
+
+.categories-section h2 {
+  margin-bottom: 24px;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #121212;
+}
+
+.categories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  max-width: 1400px;
+  margin: 0 auto 20px;
+  padding: 0 20px;
+}
+
+.category-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 12px;
+  border: 1px solid #d0d0d0;
+  background: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.category-btn:hover {
+  border-color: #2e6d99;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(46, 109, 153, 0.15);
+}
+
+.category-btn.active {
+  border-color: #2e6d99;
+  background: linear-gradient(100deg, rgba(79, 172, 254, 0.1), rgba(46, 109, 153, 0.1));
+  color: #2e6d99;
+}
+
+.category-icon {
+  font-size: 1.8rem;
+  display: block;
+}
+
+.category-label {
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.category-reset-btn {
+  margin-top: 12px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1000px) {
+  .categories-grid {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 10px;
+  }
+
+  .categories-section h2 {
+    font-size: 1.2rem;
+    margin-bottom: 18px;
+  }
+
+  .category-btn {
+    padding: 12px 8px;
+    gap: 6px;
+  }
+
+  .category-icon {
+    font-size: 1.6rem;
+  }
+
+  .category-label {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 700px) {
+  .categories-section {
+    margin: 30px auto;
+    padding: 20px 12px;
+  }
+
+  .categories-grid {
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 8px;
+    padding: 0 12px;
+  }
+
+  .categories-section h2 {
+    font-size: 1.05rem;
+    margin-bottom: 14px;
+  }
+
+  .category-btn {
+    padding: 10px 6px;
+    gap: 4px;
+  }
+
+  .category-icon {
+    font-size: 1.4rem;
+  }
+
+  .category-label {
+    font-size: 0.75rem;
+  }
+}
+
+/* Ultra-wide curved screen support */
+@media (min-width: 1850px) and (min-height: 850px) {
+  .categories-section {
+    margin: 50px auto;
+    padding: 40px 20px;
+  }
+
+  .categories-grid {
+    max-width: 1500px;
+  }
+
+  .categories-section h2 {
+    font-size: 1.5rem;
+  }
+
+  .category-btn {
+    padding: 18px 14px;
+    gap: 10px;
+  }
+
+  .category-icon {
+    font-size: 2rem;
+  }
+
+  .category-label {
+    font-size: 0.95rem;
+  }
+}

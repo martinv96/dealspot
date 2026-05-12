@@ -7,7 +7,9 @@ import { sequelize } from "./config/database.js";
 import authRoutes from "./routes/auth.routes.js";
 import annonceRoutes from "./routes/annonce.routes.js";
 import messageRoutes from "./routes/message.routes.js";
+import reportRoutes from "./routes/report.routes.js";
 import "./models/index.js";
+
 
 dotenv.config();
 
@@ -33,6 +35,7 @@ app.get("/api/health", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/annonces", annonceRoutes);
 app.use("/api/messages", messageRoutes);
+app.use("/api/reports", reportRoutes);
 
 app.use((error, _req, res, next) => {
   if (!error) {

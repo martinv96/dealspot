@@ -42,10 +42,20 @@ function mapAnnonceToCard(annonce) {
   };
 }
 
+const CATEGORIES = [
+  { value: "meubles", label: "Meubles", icon: "🪑" },
+  { value: "electronique", label: "Électronique", icon: "📱" },
+  { value: "mode", label: "Mode", icon: "👕" },
+  { value: "sport", label: "Sport", icon: "⚽" },
+  { value: "jeux-loisirs", label: "Jeux & Loisirs", icon: "🎮" },
+  { value: "autres", label: "Autres", icon: "📦" }
+];
+
 export default function HomePage() {
   const [annonces, setAnnonces] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
   useEffect(() => {
     async function loadPublishedAnnonces() {
@@ -65,7 +75,16 @@ export default function HomePage() {
   }, []);
 
   const cards = useMemo(() => annonces.map(mapAnnonceToCard), [annonces]);
-  const recentCards = useMemo(() => cards.slice(0, 3), [cards]);
+  
+  const filteredCards = useMemo(() => {
+    if (!selectedCategory) return cards;
+    return cards.filter(card => {
+      const annonce = annonces.find(a => a.id === card.id);
+      return annonce && annonce.categorie === selectedCategory;
+    });
+  }, [cards, selectedCategory, annonces]);
+  
+  const recentCards = useMemo(() => filteredCards.slice(0, 3), [filteredCards]);
 
   return (
     <div className="page-shell">
@@ -89,6 +108,30 @@ export default function HomePage() {
           </div>
         </section>
 
+        <section className="section categories-section">
+          <h2>Explorer par catégorie</h2>
+          <div className="categories-grid">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat.value}
+                className={`category-btn ${selectedCategory === cat.value ? "active" : ""}`}
+                onClick={() => setSelectedCategory(cat.value)}
+              >
+                <span className="category-icon">{cat.icon}</span>
+                <span className="category-label">{cat.label}</span>
+              </button>
+            ))}
+          </div>
+          {selectedCategory && (
+            <button 
+              className="btn btn-outline category-reset-btn"
+              onClick={() => setSelectedCategory(null)}
+            >
+              Réinitialiser les filtres
+            </button>
+          )}
+        </section>
+
         <section className="section listings-section">
           <div className="section-head">
             <h2>Annonces récentes</h2>
@@ -102,7 +145,7 @@ export default function HomePage() {
 
         <section className="section listings-section">
           <h2>Les meilleures annonces</h2>
-          {isLoading ? null : !error ? <ProductGrid items={cards} /> : null}
+          {isLoading ? null : !error ? <ProductGrid items={filteredCards} /> : null}
         </section>
       </main>
 
