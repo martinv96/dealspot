@@ -4,6 +4,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  max-width: 980px;
+  margin: 0 auto;
 }
 
 .auth-title {
@@ -105,7 +107,28 @@
 }
 
 @media (max-width: 1000px) {
+  .auth-page .auth-main {
+    max-width: 100%;
+  }
+
   .auth-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .auth-page .auth-main {
+    padding: 30px 16px 44px;
+  }
+
+  .auth-card,
+  .auth-card-wide {
+    max-width: 100%;
+  }
+}
+
+@media (min-width: 1850px) and (min-height: 850px) {
+  .auth-page .auth-main {
+    max-width: 1080px;
   }
 }

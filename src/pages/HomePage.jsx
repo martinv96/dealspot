@@ -71,7 +71,7 @@ export default function HomePage() {
     <div className="page-shell">
       <PublicHeader />
 
-      <main className="page-main">
+      <main className="page-main home-main">
         <section className="hero">
           <h1>Achetez et vendez vos produits, localement</h1>
           <p>

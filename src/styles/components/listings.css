@@ -24,6 +24,18 @@
   flex-wrap: wrap;
 }
 
+.home-main .hero > * {
+  max-width: 980px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.home-main .section,
+.private-home-main .section {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
 .section-head {
   display: flex;
   justify-content: space-between;
@@ -100,6 +112,8 @@
 
 .annonce-detail-page {
   padding: 26px 34px 0;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 .annonce-detail-breadcrumb {
@@ -116,6 +130,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
   gap: 16px;
+  align-items: start;
 }
 
 .annonce-media-card,
@@ -131,11 +146,22 @@
   padding: 12px;
 }
 
+.annonce-main-image-frame {
+  width: 100%;
+  height: clamp(280px, 34vh, 440px);
+  border-radius: 6px;
+  background: #f4f4f4;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .annonce-main-image {
   width: 100%;
-  aspect-ratio: 16/11;
-  object-fit: cover;
-  border-radius: 6px;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
   display: block;
 }
 
@@ -180,6 +206,17 @@
   color: #696969;
   font-size: 0.88rem;
   line-height: 1.45;
+}
+
+.annonce-description-card textarea {
+  width: 100%;
+  min-height: 120px;
+  border: 1px solid #dadada;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.92rem;
+  line-height: 1.4;
+  resize: vertical;
 }
 
 .annonce-side-col {
@@ -293,6 +330,53 @@
   margin-top: 4px;
 }
 
+@media (min-width: 1850px) and (min-height: 850px) {
+  .home-main .section,
+  .private-home-main .section {
+    max-width: 1500px;
+  }
+
+  .annonce-detail-page {
+    padding: 18px 26px 0;
+    max-width: 1500px;
+  }
+
+  .annonce-detail-grid {
+    grid-template-columns: minmax(0, 1.35fr) minmax(340px, 0.65fr);
+    gap: 14px;
+    align-items: start;
+  }
+
+  .annonce-main-image {
+    height: 100%;
+  }
+
+  .annonce-main-image-frame {
+    height: 40vh;
+    min-height: 300px;
+    max-height: 480px;
+  }
+
+  .annonce-description-card {
+    margin-top: 8px;
+    padding: 10px;
+  }
+
+  .annonce-summary-card {
+    padding: 12px;
+  }
+
+  .annonce-summary-card h1,
+  .annonce-price {
+    font-size: 1.75rem;
+    margin-bottom: 6px;
+  }
+
+  .annonce-side-col {
+    gap: 8px;
+  }
+}
+
 @media (max-width: 1000px) {
   .listing-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -304,16 +388,98 @@
 }
 
 @media (max-width: 700px) {
+  .home-main .section,
+  .private-home-main .section {
+    max-width: 100%;
+  }
+
   .listing-grid {
     grid-template-columns: 1fr;
   }
 
   .annonce-detail-page {
     padding: 18px 16px 0;
+    max-width: 100%;
+  }
+
+  .annonce-detail-breadcrumb {
+    gap: 6px;
+    font-size: 0.75rem;
+    margin-bottom: 10px;
+  }
+
+  .annonce-media-card,
+  .annonce-summary-card,
+  .annonce-vendeur-card,
+  .annonce-description-card {
+    border-radius: 10px;
+  }
+
+  .annonce-media-card,
+  .annonce-summary-card,
+  .annonce-vendeur-card,
+  .annonce-description-card {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .annonce-main-image {
+    height: 100%;
+  }
+
+  .annonce-main-image-frame {
+    height: clamp(210px, 36vh, 320px);
+  }
+
+  .annonce-thumbs-row {
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .annonce-thumb {
+    width: 56px;
+    height: 56px;
+    flex: 0 0 auto;
+  }
+
+  .annonce-description-card textarea,
+  .annonce-edit-form textarea {
+    min-height: 100px;
+  }
+
+  .annonce-edit-form input,
+  .annonce-edit-form textarea,
+  .annonce-edit-form select,
+  .annonce-summary-card .btn {
+    font-size: 0.95rem;
   }
 
   .annonce-summary-card h1,
   .annonce-price {
     font-size: 1.6rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .annonce-detail-page {
+    padding: 14px 10px 0;
+    max-width: 100%;
+  }
+
+  .annonce-summary-card h1,
+  .annonce-price {
+    font-size: 1.35rem;
+  }
+
+  .annonce-meta {
+    font-size: 0.82rem;
+  }
+
+  .annonce-main-image-frame {
+    height: clamp(190px, 34vh, 260px);
+  }
+
+  .annonce-owner-actions {
+    gap: 8px;
   }
 }

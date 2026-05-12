@@ -1,6 +1,9 @@
 .profile-page {
   flex: 1;
   padding: 34px 38px 0;
+  width: min(100%, 1400px);
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 .profile-heading {
@@ -20,7 +23,8 @@
 
 .profile-layout {
   display: grid;
-  grid-template-columns: 300px 1fr;
+  width: 100%;
+  grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
   gap: 18px;
   align-items: start;
 }
@@ -86,6 +90,7 @@
 .profile-content {
   display: grid;
   gap: 14px;
+  min-width: 0;
 }
 
 .profile-tabs {
@@ -139,7 +144,20 @@
 }
 
 @media (max-width: 900px) {
+  .profile-page {
+    width: 100%;
+    max-width: 100%;
+    padding: 24px 16px 0;
+  }
+
   .profile-layout {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 1850px) and (min-height: 850px) {
+  .profile-page {
+    width: min(100%, 1500px);
+    max-width: 1500px;
   }
 }

@@ -186,7 +186,9 @@ export default function AnnonceDetailPage() {
 
             <section className="annonce-detail-grid">
               <div className="annonce-media-card">
-                <img src={currentImages[activeImageIndex]} alt="Main" className="annonce-main-image" />
+                <div className="annonce-main-image-frame">
+                  <img src={currentImages[activeImageIndex]} alt="Main" className="annonce-main-image" />
+                </div>
 
                 <div className="annonce-thumbs-row">
                   {currentImages.map((image, index) => (

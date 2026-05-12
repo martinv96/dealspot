@@ -93,7 +93,7 @@ export default function PrivateHomePage() {
     <div className="page-shell">
       <PrivateHeader />
 
-      <main className="page-main">
+      <main className="page-main private-home-main">
         <section className="hero hero-private">
           <h1>Bonjour {user?.pseudo || "Martin"} !</h1>
           <p>Découvrez les meilleures affaires près de chez vous</p>
