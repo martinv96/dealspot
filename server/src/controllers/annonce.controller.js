@@ -83,9 +83,17 @@ export const createAnnonce = async (req, res) => {
 export const listPublishedAnnonces = async (req, res) => {
   try {
     const limit = parseLimit(req.query.limit, 24);
+    const where = { statut: "active" };
+
+    if (req.query.userId) {
+      const userId = Number.parseInt(req.query.userId, 10);
+      if (!Number.isNaN(userId)) {
+        where.user_id = userId;
+      }
+    }
 
     const annonces = await Annonce.findAll({
-      where: { statut: "active" },
+      where,
       order: [["date_publication", "DESC"]],
       limit
     });

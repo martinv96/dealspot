@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { FaEdit, FaMapMarkerAlt, FaRegCalendarAlt, FaTrashAlt, FaUserCircle, FaTimes, FaHeart, FaShareAlt, FaCommentDots, FaFlag } from "react-icons/fa";
+import { FaEdit, FaMapMarkerAlt, FaRegCalendarAlt, FaTrashAlt, FaUserCircle, FaTimes, FaHeart, FaRegHeart, FaShareAlt, FaCommentDots, FaFlag } from "react-icons/fa";
 import PublicHeader from "../components/PublicHeader";
 import PrivateHeader from "../components/PrivateHeader";
 import SiteFooter from "../components/SiteFooter";
 import { useAuth } from "../context/AuthContext";
+import { useFavorites } from "../hooks/useFavorites";
 import api from "../services/api";
 
 const FALLBACK_IMAGE =
@@ -105,6 +106,7 @@ export default function AnnonceDetailPage() {
   }, [activeImageIndex, currentImages.length]);
 
   const isOwner = !!(isAuthenticated && user?.id && annonce?.user_id === user.id);
+  const { isFavorite, toggleFavorite } = useFavorites();
 
   const handleRemoveExistingImage = (indexToRemove) => {
     setExistingImagesToKeep((prev) => prev.filter((_, i) => i !== indexToRemove));
@@ -201,7 +203,7 @@ export default function AnnonceDetailPage() {
                         <img src={image} alt="miniature" />
                       </button>
 
-                      {/* LE BOUTON ROUGE SUR LA MINIATURE (Uniquement en mode édition) */}
+                      {/* suppression */}
                       {isEditing && image !== FALLBACK_IMAGE && (
                         <button
                           type="button"
@@ -268,7 +270,13 @@ export default function AnnonceDetailPage() {
                             <FaCommentDots /> Contacter le vendeur
                           </button>
                           <div className="annonce-visitor-secondary">
-                            <button className="btn btn-outline"><FaHeart /> Favoris</button>
+                            <button
+                              className={"btn btn-outline" + (isFavorite(annonce.id) ? " btn-fav-active" : "")}
+                              onClick={() => toggleFavorite(annonce)}
+                            >
+                              {isFavorite(annonce.id) ? <FaHeart /> : <FaRegHeart />}
+                              {isFavorite(annonce.id) ? "Sauvegardé" : "Favoris"}
+                            </button>
                             <button className="btn btn-outline"><FaShareAlt /> Partager</button>
                           </div>
                         </div>
@@ -298,7 +306,7 @@ export default function AnnonceDetailPage() {
                     </div>
                   </div>
                   {!isOwner && isAuthenticated && (
-                    <button className="btn btn-outline annonce-vendeur-profil">Voir le profil</button>
+                    <Link to={`/vendeurs/${annonce.vendeur?.id}`} className="btn btn-outline annonce-vendeur-profil">Voir le profil</Link>
                   )}
                 </div>
 

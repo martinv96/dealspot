@@ -1,0 +1,212 @@
+/* ─── Page Mes Favoris ─── */
+
+.favorites-page {
+  padding: 32px 34px 0;
+  width: min(100%, 1400px);
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.favorites-head {
+  margin-bottom: 24px;
+}
+
+.favorites-head h1 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.favorites-head-icon {
+  color: #e03131;
+  font-size: 1.2rem;
+}
+
+.favorites-head p {
+  color: #777;
+  font-size: 0.9rem;
+}
+
+/* État vide */
+.favorites-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 60px 20px;
+  text-align: center;
+  color: #aaa;
+}
+
+.favorites-empty-icon {
+  font-size: 3rem;
+  color: #e5c0c0;
+}
+
+.favorites-empty p {
+  font-size: 1rem;
+  color: #888;
+}
+
+/* Grille cartes */
+.favorites-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.favorites-card {
+  background: #fff;
+  border: 1px solid #ececec;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+
+.favorites-card:hover {
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.09);
+  transform: translateY(-2px);
+}
+
+/* Image + bouton cœur */
+.favorites-card-img-wrap {
+  display: block;
+  position: relative;
+  aspect-ratio: 4/3;
+  overflow: hidden;
+  background: #f4f4f4;
+}
+
+.favorites-card-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.2s;
+}
+
+.favorites-card:hover .favorites-card-img-wrap img {
+  transform: scale(1.03);
+}
+
+.favorites-heart-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #ccc;
+  font-size: 0.9rem;
+  transition: transform 0.15s, color 0.15s;
+  z-index: 2;
+}
+
+.favorites-heart-btn.active {
+  color: #e03131;
+}
+
+.favorites-heart-btn:hover {
+  transform: scale(1.15);
+}
+
+/* Corps de la carte */
+.favorites-card-body {
+  display: block;
+  padding: 10px 12px 12px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.favorites-card-body h3 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.favorites-card-price {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #3b69c0;
+  margin-bottom: 5px;
+}
+
+.favorites-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  color: #888;
+  margin-top: 2px;
+}
+
+/* Bouton favori actif sur détail annonce */
+.btn-fav-active {
+  color: #e03131;
+  border-color: #e03131;
+}
+
+.btn-fav-active svg {
+  color: #e03131;
+}
+
+/* Badge nav */
+.nav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #e03131;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  border-radius: 10px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  line-height: 1;
+}
+
+.nav-heart-active {
+  color: #e03131;
+}
+
+/* Responsive */
+@media (max-width: 1000px) {
+  .favorites-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 700px) {
+  .favorites-page {
+    padding: 16px 12px 0;
+  }
+
+  .favorites-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+}
+
+@media (min-width: 1850px) and (min-height: 850px) {
+  .favorites-page {
+    max-width: 1500px;
+  }
+
+  .favorites-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}

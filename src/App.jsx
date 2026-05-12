@@ -8,6 +8,8 @@ import { useAuth } from "./context/AuthContext";
 import ProfilePage from "./pages/ProfilePage";
 import MyAnnoncesPage from "./pages/MyAnnoncesPage";
 import AnnonceDetailPage from "./pages/AnnonceDetailPage";
+import UserProfilePage from "./pages/UserProfilePage";
+import FavoritesPage from "./pages/FavoritesPage";
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -24,6 +26,15 @@ export default function App() {
       <Route path="/connexion" element={<LoginPage />} />
       <Route path="/inscription" element={<RegisterPage />} />
       <Route path="/annonces/:id" element={<AnnonceDetailPage />} />
+      <Route path="/vendeurs/:id" element={<UserProfilePage />} />
+            <Route
+              path="/favoris"
+              element={
+                <ProtectedRoute>
+                  <FavoritesPage />
+                </ProtectedRoute>
+              }
+            />
       <Route
         path="/creer-annonce"
         element={

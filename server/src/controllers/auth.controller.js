@@ -23,6 +23,28 @@ function userDto(user) {
   };
 }
 
+export async function getUserPublicProfile(req, res) {
+  try {
+    const userId = Number.parseInt(req.params.id, 10);
+    if (Number.isNaN(userId)) {
+      return res.status(400).json({ message: "ID utilisateur invalide." });
+    }
+
+    const user = await User.findByPk(userId, {
+      attributes: ["id", "pseudo", "date_inscription", "localisation"]
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "Utilisateur introuvable." });
+    }
+
+    return res.json({ user });
+  } catch (error) {
+    console.error("Erreur getUserPublicProfile:", error);
+    return res.status(500).json({ message: "Erreur serveur." });
+  }
+}
+
 export async function register(req, res) {
   try {
     const { pseudo, email, password, localisation } = req.body;
