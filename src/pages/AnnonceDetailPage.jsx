@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { FaEdit, FaMapMarkerAlt, FaRegCalendarAlt, FaTrashAlt, FaUserCircle, FaTimes } from "react-icons/fa";
+import { FaEdit, FaMapMarkerAlt, FaRegCalendarAlt, FaTrashAlt, FaUserCircle, FaTimes, FaHeart, FaShareAlt, FaCommentDots, FaFlag } from "react-icons/fa";
 import PublicHeader from "../components/PublicHeader";
 import PrivateHeader from "../components/PrivateHeader";
 import SiteFooter from "../components/SiteFooter";
@@ -256,8 +256,23 @@ export default function AnnonceDetailPage() {
                     <>
                       <h1>{annonce.titre}</h1>
                       <p className="annonce-price">{formatPrice(annonce.prix)} €</p>
+                      {annonce.categorie && (
+                        <span className="annonce-categorie-badge">{annonce.categorie}</span>
+                      )}
                       <p className="annonce-meta"><FaMapMarkerAlt /> {annonce.localisation}</p>
-                      <p className="annonce-meta"><FaRegCalendarAlt /> Publiée le {formatDate(annonce.date_publication)}</p>
+                      <p className="annonce-meta"><FaRegCalendarAlt /> Publié le {formatDate(annonce.date_publication)}</p>
+
+                      {!isOwner && isAuthenticated && (
+                        <div className="annonce-visitor-actions">
+                          <button className="btn btn-contact">
+                            <FaCommentDots /> Contacter le vendeur
+                          </button>
+                          <div className="annonce-visitor-secondary">
+                            <button className="btn btn-outline"><FaHeart /> Favoris</button>
+                            <button className="btn btn-outline"><FaShareAlt /> Partager</button>
+                          </div>
+                        </div>
+                      )}
                     </>
                   )}
 
@@ -282,7 +297,16 @@ export default function AnnonceDetailPage() {
                       <p>Membre depuis {formatDate(annonce.vendeur?.date_inscription)}</p>
                     </div>
                   </div>
+                  {!isOwner && isAuthenticated && (
+                    <button className="btn btn-outline annonce-vendeur-profil">Voir le profil</button>
+                  )}
                 </div>
+
+                {!isOwner && isAuthenticated && (
+                  <button className="annonce-signaler-btn">
+                    <FaFlag /> Signaler cette annonce
+                  </button>
+                )}
               </aside>
             </section>
           </>

@@ -57,6 +57,13 @@ export default function PrivateHomePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchCategorie, setSearchCategorie] = useState("");
+  const [searchPrixMax, setSearchPrixMax] = useState("");
+  const [searchVille, setSearchVille] = useState("");
+  const [filters, setFilters] = useState({ query: "", categorie: "", prixMax: "", ville: "" });
+  const [hasSearched, setHasSearched] = useState(false);
+
   useEffect(() => {
     async function loadDashboardData() {
       try {
@@ -64,7 +71,7 @@ export default function PrivateHomePage() {
         setError("");
 
         const [publishedResponse, mineResponse] = await Promise.all([
-          api.get("/annonces", { params: { limit: 24 } }),
+          api.get("/annonces", { params: { limit: 200 } }),
           api.get("/annonces/me", { params: { limit: 24 } })
         ]);
 
@@ -89,6 +96,41 @@ export default function PrivateHomePage() {
     [myAnnonces]
   );
 
+  const filteredCards = useMemo(() => {
+    if (!hasSearched) return null;
+    const q = filters.query.toLowerCase().trim();
+    const ville = filters.ville.toLowerCase().trim();
+    const prixMax = filters.prixMax !== "" ? Number(filters.prixMax) : null;
+
+    return publishedAnnonces
+      .filter((a) => {
+        if (q && !a.titre?.toLowerCase().includes(q) && !a.description?.toLowerCase().includes(q)) return false;
+        if (filters.categorie && a.categorie !== filters.categorie) return false;
+        if (prixMax !== null && Number(a.prix) > prixMax) return false;
+        if (ville && !a.localisation?.toLowerCase().includes(ville)) return false;
+        return true;
+      })
+      .map(mapAnnonceToCard);
+  }, [filters, hasSearched, publishedAnnonces]);
+
+  function handleSearch() {
+    setFilters({ query: searchQuery, categorie: searchCategorie, prixMax: searchPrixMax, ville: searchVille });
+    setHasSearched(true);
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === "Enter") handleSearch();
+  }
+
+  function handleReset() {
+    setSearchQuery("");
+    setSearchCategorie("");
+    setSearchPrixMax("");
+    setSearchVille("");
+    setFilters({ query: "", categorie: "", prixMax: "", ville: "" });
+    setHasSearched(false);
+  }
+
   return (
     <div className="page-shell">
       <PrivateHeader />
@@ -101,31 +143,68 @@ export default function PrivateHomePage() {
 
         <section className="private-search-wrap">
           <div className="private-search">
-            <input placeholder="Rechercher un objet..." />
-            <select>
-              <option>Catégorie</option>
+            <input
+              placeholder="Rechercher un objet..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
+            />
+            <select value={searchCategorie} onChange={(e) => setSearchCategorie(e.target.value)}>
+              <option value="">Catégorie</option>
+              <option value="meubles">Meubles</option>
+              <option value="electronique">Électronique</option>
+              <option value="mode">Mode</option>
+              <option value="sport">Sport</option>
+              <option value="jeux-loisirs">Jeux & Loisirs</option>
+              <option value="autres">Autres</option>
             </select>
-            <input placeholder="Prix max" />
-            <input placeholder="Ville" />
-            <button className="btn btn-primary">Rechercher</button>
+            <input
+              placeholder="Prix max"
+              type="number"
+              min="0"
+              value={searchPrixMax}
+              onChange={(e) => setSearchPrixMax(e.target.value)}
+              onKeyDown={handleKeyDown}
+            />
+            <input
+              placeholder="Ville"
+              value={searchVille}
+              onChange={(e) => setSearchVille(e.target.value)}
+              onKeyDown={handleKeyDown}
+            />
+            <button className="btn btn-primary" onClick={handleSearch}>Rechercher</button>
           </div>
         </section>
 
-        <section className="section listings-section">
-          <div className="section-head">
-            <h2>Mes annonces en 1 clic</h2>
-            <Link to="/mes-annonces" className="btn btn-outline">Voir tout</Link>
-          </div>
+        {hasSearched ? (
+          <section className="section listings-section">
+            <div className="section-head">
+              <h2>Résultats ({filteredCards.length})</h2>
+              <button className="btn btn-outline" onClick={handleReset}>Effacer</button>
+            </div>
+            {filteredCards.length === 0
+              ? <p className="empty-listing-message">Aucune annonce ne correspond à votre recherche.</p>
+              : <ProductGrid items={filteredCards} />
+            }
+          </section>
+        ) : (
+          <>
+            <section className="section listings-section">
+              <div className="section-head">
+                <h2>Mes annonces en 1 clic</h2>
+                <Link to="/mes-annonces" className="btn btn-outline">Voir tout</Link>
+              </div>
+              {isLoading ? <p className="center-loader">Chargement des annonces...</p> : null}
+              {!isLoading && error ? <p className="form-error">{error}</p> : null}
+              {!isLoading && !error ? <ProductGrid items={myActiveCards} showBadge /> : null}
+            </section>
 
-          {isLoading ? <p className="center-loader">Chargement des annonces...</p> : null}
-          {!isLoading && error ? <p className="form-error">{error}</p> : null}
-          {!isLoading && !error ? <ProductGrid items={myActiveCards} showBadge /> : null}
-        </section>
-
-        <section className="section listings-section">
-          <h2>Les meilleures annonces</h2>
-          {isLoading ? null : !error ? <ProductGrid items={publishedCards} /> : null}
-        </section>
+            <section className="section listings-section">
+              <h2>Les meilleures annonces</h2>
+              {isLoading ? null : !error ? <ProductGrid items={publishedCards} /> : null}
+            </section>
+          </>
+        )}
       </main>
 
       <SiteFooter />
