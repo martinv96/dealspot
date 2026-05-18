@@ -90,6 +90,56 @@
 
 - Fichiers: `auth.routes.js`, `auth.controller.js`, `VerifyPage.jsx`, `ForgotPasswordPage.jsx`, `ResetPasswordPage.jsx`
 
+### 8 bis. Intégration NoSQL (3-5h)
+
+Objectif: ajouter une brique NoSQL sans remplacer MySQL ni casser la messagerie actuelle.
+
+Contexte actuel validé:
+
+- La messagerie existe déjà en SQL (`messages` via Sequelize)
+- Il n'existe pas encore de page dédiée "Contactez-nous"
+
+**Répartition recommandée (hybride):**
+
+- SQL (MySQL + Sequelize): utilisateurs, annonces, auth, favoris, signalements, messagerie existante
+- NoSQL: nouveau module "Contact" et/ou logs fonctionnels (soumissions, erreurs, latence)
+
+**Option A (recommandée pour démarrer): Contact + logs en NoSQL**
+
+- Ajouter MongoDB + Mongoose côté serveur
+- Créer collection `contact_messages`
+	- Champs: `email`, `sujet`, `message`, `categorie`, `status`, `createdAt`, `meta`
+- API: `POST /api/contact` (public) + `GET /api/contact` (admin)
+- Créer une page frontend Contact (nouvelle route)
+- Ne rien modifier à la messagerie SQL existante
+
+**Option B (évolution avancée): NoSQL aussi pour la messagerie, sans rupture**
+
+- Garder les endpoints actuels inchangés (`/api/messages/...`)
+- Introduire une couche `message.repository` avec 2 implémentations:
+	- SQLRepository (existant)
+	- MongoRepository (nouvelle)
+- Activer un mode progressif via env (ex: `MESSAGE_STORE=sql|mongo|dual`)
+- En mode `dual`: écriture SQL + Mongo, lecture SQL (sécurisé), puis bascule de lecture Mongo après validation
+
+**Fichiers à ajouter/modifier (Option A):**
+
+- `server/src/config/mongo.js` (nouveau)
+- `server/src/models/ContactMessage.js` (nouveau)
+- `server/src/controllers/contact.controller.js` (nouveau)
+- `server/src/routes/contact.routes.js` (nouveau)
+- `server/src/app.js` (brancher Mongo + route)
+- `src/pages/ContactPage.jsx` (nouveau)
+- `src/App.jsx` (nouvelle route)
+- `src/services/api.js` (helpers contact)
+
+**Fichiers à modifier en plus si Option B (messagerie):**
+
+- `server/src/controllers/message.controller.js`
+- `server/src/routes/message.routes.js` (si besoin d'admin/debug)
+- `server/src/models/Message.js` (conservé, mais piloté par repository)
+- `src/pages/MessagesPage.jsx` (normalement inchangé si API inchangée)
+
 ---
 
 ## 🟡 PHASE 3 — Polish
@@ -138,11 +188,12 @@
 | 2 | Validation | 2-3h |
 | 2 | Image optimization | 2-3h |
 | 2 | Email verification | 2-3h |
+| 2 | Intégration NoSQL | 3-5h |
 | 3 | Loading states | 1h30 |
 | 3 | Empty states | 1h |
 | 3 | Error pages | 1h |
 | 3 | Meta tags | 30min |
-| **Total** | | **~18-21h** |
+| **Total** | | **~21-26h** |
 
 ---
 
@@ -154,3 +205,4 @@ JOUR 3 → Favoris en base + Validation
 JOUR 4 → Image optimization + Loading states
 JOUR 5 → Empty states + Error pages + Meta tags + Polish
 JOUR 6 → Email verification + Forgot password + Tests globaux
+JOUR 7 → Intégration NoSQL (Option A, puis Option B si temps)

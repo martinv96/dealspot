@@ -18,6 +18,10 @@ function resolveImageUrl(value) {
     return API_ORIGIN + value;
   }
 
+  if (typeof value === "string" && value.startsWith("uploads/")) {
+    return API_ORIGIN + "/" + value;
+  }
+
   return value;
 }
 
@@ -33,6 +37,25 @@ function getImageSource(item) {
   return FALLBACK_IMAGE;
 }
 
+function getBadgeClass(item) {
+  const status = String(item?.badgeStatus || "").toLowerCase();
+  const label = String(item?.badge || "").toLowerCase();
+
+  if (status === "active" || label.includes("publi")) {
+    return "badge badge--active";
+  }
+
+  if (status === "expirée" || status === "expiree" || label.includes("vend")) {
+    return "badge badge--sold";
+  }
+
+  if (status === "brouillon" || label.includes("brouillon")) {
+    return "badge badge--draft";
+  }
+
+  return "badge";
+}
+
 export default function ProductGrid({ items, showBadge = false }) {
   if (!items || items.length === 0) {
     return <p className="empty-listing-message">Aucune annonce disponible pour le moment.</p>;
@@ -42,7 +65,7 @@ export default function ProductGrid({ items, showBadge = false }) {
     <div className="listing-grid">
       {items.map((item) => (
         <article className="listing-card" key={item.id}>
-          {showBadge && item.badge ? <div className="badge">{item.badge}</div> : null}
+          {showBadge && item.badge ? <div className={getBadgeClass(item)}>{item.badge}</div> : null}
 
           <Link to={"/annonces/" + item.id} className="listing-card-link">
             <img src={getImageSource(item)} alt={item.title} className="listing-image" />

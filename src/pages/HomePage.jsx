@@ -58,11 +58,13 @@ export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState(null);
 
   useEffect(() => {
-    async function loadPublishedAnnonces() {
+    async function init() {
       try {
         setIsLoading(true);
         setError("");
-        const response = await api.get("/annonces", { params: { limit: 24 } });
+        const response = await api.get("/annonces", {
+          params: { limit: 6, page: 1 }
+        });
         setAnnonces(response.data?.annonces || []);
       } catch (loadError) {
         setError(loadError?.response?.data?.message || "Impossible de charger les annonces.");
@@ -71,7 +73,7 @@ export default function HomePage() {
       }
     }
 
-    loadPublishedAnnonces();
+    init();
   }, []);
 
   const cards = useMemo(() => annonces.map(mapAnnonceToCard), [annonces]);
@@ -135,7 +137,7 @@ export default function HomePage() {
         <section className="section listings-section">
           <div className="section-head">
             <h2>Annonces récentes</h2>
-            <Link to="/connexion" className="btn btn-outline">Voir tout</Link>
+            <Link to="/annonces" className="btn btn-outline">Voir tout</Link>
           </div>
 
           {isLoading ? <p className="center-loader">Chargement des annonces...</p> : null}
@@ -144,7 +146,10 @@ export default function HomePage() {
         </section>
 
         <section className="section listings-section">
-          <h2>Les meilleures annonces</h2>
+          <div className="section-head">
+            <h2>Annonces du site</h2>
+            <Link to="/annonces" className="btn btn-outline">Voir tout</Link>
+          </div>
           {isLoading ? null : !error ? <ProductGrid items={filteredCards} /> : null}
         </section>
       </main>

@@ -46,7 +46,8 @@ function mapAnnonceToCard(annonce) {
     city: annonce.localisation || "Non précisée",
     date: formatRelativeDate(annonce.date_publication),
     images: Array.isArray(annonce.images) ? annonce.images : [],
-    badge: badgeByStatus[annonce.statut] || "Annonce"
+    badge: badgeByStatus[annonce.statut] || "Annonce",
+    badgeStatus: annonce.statut
   };
 }
 
@@ -57,13 +58,6 @@ export default function PrivateHomePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchCategorie, setSearchCategorie] = useState("");
-  const [searchPrixMax, setSearchPrixMax] = useState("");
-  const [searchVille, setSearchVille] = useState("");
-  const [filters, setFilters] = useState({ query: "", categorie: "", prixMax: "", ville: "" });
-  const [hasSearched, setHasSearched] = useState(false);
-
   useEffect(() => {
     async function loadDashboardData() {
       try {
@@ -71,8 +65,8 @@ export default function PrivateHomePage() {
         setError("");
 
         const [publishedResponse, mineResponse] = await Promise.all([
-          api.get("/annonces", { params: { limit: 200 } }),
-          api.get("/annonces/me", { params: { limit: 24 } })
+          api.get("/annonces", { params: { limit: 6, page: 1 } }),
+          api.get("/annonces/me", { params: { limit: 200 } })
         ]);
 
         setPublishedAnnonces(publishedResponse.data?.annonces || []);
@@ -88,48 +82,13 @@ export default function PrivateHomePage() {
   }, []);
 
   const publishedCards = useMemo(
-    () => publishedAnnonces.map(mapAnnonceToCard),
+    () => publishedAnnonces.slice(0, 6).map(mapAnnonceToCard),
     [publishedAnnonces]
   );
   const myActiveCards = useMemo(
-    () => myAnnonces.filter((annonce) => annonce.statut === "active").map(mapAnnonceToCard),
+    () => myAnnonces.filter((annonce) => annonce.statut === "active").slice(0, 6).map(mapAnnonceToCard),
     [myAnnonces]
   );
-
-  const filteredCards = useMemo(() => {
-    if (!hasSearched) return null;
-    const q = filters.query.toLowerCase().trim();
-    const ville = filters.ville.toLowerCase().trim();
-    const prixMax = filters.prixMax !== "" ? Number(filters.prixMax) : null;
-
-    return publishedAnnonces
-      .filter((a) => {
-        if (q && !a.titre?.toLowerCase().includes(q) && !a.description?.toLowerCase().includes(q)) return false;
-        if (filters.categorie && a.categorie !== filters.categorie) return false;
-        if (prixMax !== null && Number(a.prix) > prixMax) return false;
-        if (ville && !a.localisation?.toLowerCase().includes(ville)) return false;
-        return true;
-      })
-      .map(mapAnnonceToCard);
-  }, [filters, hasSearched, publishedAnnonces]);
-
-  function handleSearch() {
-    setFilters({ query: searchQuery, categorie: searchCategorie, prixMax: searchPrixMax, ville: searchVille });
-    setHasSearched(true);
-  }
-
-  function handleKeyDown(e) {
-    if (e.key === "Enter") handleSearch();
-  }
-
-  function handleReset() {
-    setSearchQuery("");
-    setSearchCategorie("");
-    setSearchPrixMax("");
-    setSearchVille("");
-    setFilters({ query: "", categorie: "", prixMax: "", ville: "" });
-    setHasSearched(false);
-  }
 
   return (
     <div className="page-shell">
@@ -138,73 +97,26 @@ export default function PrivateHomePage() {
       <main className="page-main private-home-main">
         <section className="hero hero-private">
           <h1>Bonjour {user?.pseudo || "Martin"} !</h1>
-          <p>Découvrez les meilleures affaires près de chez vous</p>
+          <p>Découvrez les annonces du site près de chez vous</p>
         </section>
 
-        <section className="private-search-wrap">
-          <div className="private-search">
-            <input
-              placeholder="Rechercher un objet..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={handleKeyDown}
-            />
-            <select value={searchCategorie} onChange={(e) => setSearchCategorie(e.target.value)}>
-              <option value="">Catégorie</option>
-              <option value="meubles">Meubles</option>
-              <option value="electronique">Électronique</option>
-              <option value="mode">Mode</option>
-              <option value="sport">Sport</option>
-              <option value="jeux-loisirs">Jeux & Loisirs</option>
-              <option value="autres">Autres</option>
-            </select>
-            <input
-              placeholder="Prix max"
-              type="number"
-              min="0"
-              value={searchPrixMax}
-              onChange={(e) => setSearchPrixMax(e.target.value)}
-              onKeyDown={handleKeyDown}
-            />
-            <input
-              placeholder="Ville"
-              value={searchVille}
-              onChange={(e) => setSearchVille(e.target.value)}
-              onKeyDown={handleKeyDown}
-            />
-            <button className="btn btn-primary" onClick={handleSearch}>Rechercher</button>
+        <section className="section listings-section">
+          <div className="section-head">
+            <h2>Mes annonces en 1 clic</h2>
+            <Link to="/mes-annonces" className="btn btn-outline">Voir tout</Link>
           </div>
+          {isLoading ? <p className="center-loader">Chargement des annonces...</p> : null}
+          {!isLoading && error ? <p className="form-error">{error}</p> : null}
+          {!isLoading && !error ? <ProductGrid items={myActiveCards} showBadge /> : null}
         </section>
 
-        {hasSearched ? (
-          <section className="section listings-section">
-            <div className="section-head">
-              <h2>Résultats ({filteredCards.length})</h2>
-              <button className="btn btn-outline" onClick={handleReset}>Effacer</button>
-            </div>
-            {filteredCards.length === 0
-              ? <p className="empty-listing-message">Aucune annonce ne correspond à votre recherche.</p>
-              : <ProductGrid items={filteredCards} />
-            }
-          </section>
-        ) : (
-          <>
-            <section className="section listings-section">
-              <div className="section-head">
-                <h2>Mes annonces en 1 clic</h2>
-                <Link to="/mes-annonces" className="btn btn-outline">Voir tout</Link>
-              </div>
-              {isLoading ? <p className="center-loader">Chargement des annonces...</p> : null}
-              {!isLoading && error ? <p className="form-error">{error}</p> : null}
-              {!isLoading && !error ? <ProductGrid items={myActiveCards} showBadge /> : null}
-            </section>
-
-            <section className="section listings-section">
-              <h2>Les meilleures annonces</h2>
-              {isLoading ? null : !error ? <ProductGrid items={publishedCards} /> : null}
-            </section>
-          </>
-        )}
+        <section className="section listings-section">
+          <div className="section-head">
+            <h2>Annonces du site</h2>
+            <Link to="/annonces" className="btn btn-outline">Voir tout</Link>
+          </div>
+          {isLoading ? null : !error ? <ProductGrid items={publishedCards} /> : null}
+        </section>
       </main>
 
       <SiteFooter />

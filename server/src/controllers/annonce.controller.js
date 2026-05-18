@@ -1,5 +1,6 @@
 import db from "../models/index.js";
 import jwt from "jsonwebtoken";
+import { Op } from "sequelize";
 const Annonce = db.Annonce;
 const User = db.User;
 
@@ -13,6 +14,14 @@ function parseLimit(rawLimit, fallback = 20) {
   return Math.min(parsed, MAX_LIMIT);
 }
 
+function parsePage(rawPage, fallback = 1) {
+  const parsed = Number.parseInt(rawPage, 10);
+  if (Number.isNaN(parsed) || parsed <= 0) {
+    return fallback;
+  }
+  return parsed;
+}
+
 function sanitizeImages(rawImages) {
   if (!Array.isArray(rawImages)) {
     return [];
@@ -24,6 +33,48 @@ function sanitizeImages(rawImages) {
     .filter((imageValue) => imageValue.length > 0 && imageValue.length <= 255)
     .filter((imageValue) => !imageValue.startsWith("data:"))
     .slice(0, 5);
+}
+
+function normalizeImages(rawImages) {
+  if (Array.isArray(rawImages)) {
+    return sanitizeImages(rawImages);
+  }
+
+  if (typeof rawImages === "string") {
+    const trimmed = rawImages.trim();
+    if (!trimmed) {
+      return [];
+    }
+
+    try {
+      const parsed = JSON.parse(trimmed);
+      return sanitizeImages(parsed);
+    } catch {
+      if (
+        trimmed.startsWith("/uploads/") ||
+        trimmed.startsWith("uploads/") ||
+        trimmed.startsWith("http://") ||
+        trimmed.startsWith("https://")
+      ) {
+        return sanitizeImages([trimmed]);
+      }
+      return [];
+    }
+  }
+
+  return [];
+}
+
+function serializeAnnonce(annonce) {
+  if (!annonce) {
+    return annonce;
+  }
+
+  const plainAnnonce = typeof annonce.toJSON === "function" ? annonce.toJSON() : annonce;
+  return {
+    ...plainAnnonce,
+    images: normalizeImages(plainAnnonce.images)
+  };
 }
 
 function getUploadedImageUrls(req) {
@@ -72,7 +123,7 @@ export const createAnnonce = async (req, res) => {
 
     res.status(201).json({
       message: "Annonce créée avec succès !",
-      annonce: nouvelleAnnonce
+      annonce: serializeAnnonce(nouvelleAnnonce)
     });
   } catch (error) {
     console.error("Erreur createAnnonce:", error);
@@ -83,7 +134,13 @@ export const createAnnonce = async (req, res) => {
 export const listPublishedAnnonces = async (req, res) => {
   try {
     const limit = parseLimit(req.query.limit, 24);
+    const page = parsePage(req.query.page, 1);
+    const offset = (page - 1) * limit;
     const where = { statut: "active" };
+    const query = typeof req.query.query === "string" ? req.query.query.trim() : "";
+    const categorie = typeof req.query.categorie === "string" ? req.query.categorie.trim() : "";
+    const ville = typeof req.query.ville === "string" ? req.query.ville.trim() : "";
+    const prixMax = Number.parseFloat(req.query.prixMax);
 
     if (req.query.userId) {
       const userId = Number.parseInt(req.query.userId, 10);
@@ -92,13 +149,39 @@ export const listPublishedAnnonces = async (req, res) => {
       }
     }
 
-    const annonces = await Annonce.findAll({
+    if (query) {
+      where[Op.or] = [
+        { titre: { [Op.like]: "%" + query + "%" } },
+        { description: { [Op.like]: "%" + query + "%" } }
+      ];
+    }
+
+    if (categorie) {
+      where.categorie = categorie;
+    }
+
+    if (ville) {
+      where.localisation = { [Op.like]: "%" + ville + "%" };
+    }
+
+    if (!Number.isNaN(prixMax) && prixMax >= 0) {
+      where.prix = { [Op.lte]: prixMax };
+    }
+
+    const { rows, count } = await Annonce.findAndCountAll({
       where,
       order: [["date_publication", "DESC"]],
-      limit
+      limit,
+      offset
     });
 
-    res.json({ annonces });
+    const pages = Math.max(1, Math.ceil(count / limit));
+    res.json({
+      annonces: rows.map(serializeAnnonce),
+      total: count,
+      page,
+      pages
+    });
   } catch (error) {
     console.error("Erreur listPublishedAnnonces:", error);
     res.status(500).json({ message: "Erreur récupération annonces", error: error.message });
@@ -125,7 +208,7 @@ export const listMyAnnonces = async (req, res) => {
       limit
     });
 
-    res.json({ annonces });
+    res.json({ annonces: annonces.map(serializeAnnonce) });
   } catch (error) {
     console.error("Erreur listMyAnnonces:", error);
     res.status(500).json({ message: "Erreur récupération de vos annonces", error: error.message });
@@ -153,7 +236,7 @@ export const getAnnonceById = async (req, res) => {
       return res.status(404).json({ message: "Annonce introuvable." });
     }
 
-    return res.json({ annonce });
+    return res.json({ annonce: serializeAnnonce(annonce) });
   } catch (error) {
     console.error("Erreur getAnnonceById:", error);
     return res.status(500).json({ message: "Erreur récupération annonce.", error: error.message });
@@ -224,12 +307,20 @@ export const updateMyAnnonce = async (req, res) => {
     let finalImages = [];
 
     // 1. On prend les images que le front nous dit de garder
-    if (existingImages) {
+    if (existingImages !== undefined) {
       // Si existingImages est envoyé via FormData, c'est parfois une string JSON, on la parse
-      finalImages = typeof existingImages === 'string' ? JSON.parse(existingImages) : existingImages;
+      if (typeof existingImages === "string") {
+        try {
+          finalImages = normalizeImages(JSON.parse(existingImages));
+        } catch {
+          finalImages = normalizeImages(existingImages);
+        }
+      } else {
+        finalImages = normalizeImages(existingImages);
+      }
     } else {
-      // Si le front n'envoie rien du tout, on garde les images actuelles par défaut
-      finalImages = Array.isArray(annonce.images) ? annonce.images : [];
+      // Si le front n'envoie rien du tout, on garde les images actuelles (meme si stockees en string JSON)
+      finalImages = normalizeImages(annonce.images);
     }
 
     // 2. On ajoute les nouvelles photos uploadées
@@ -238,10 +329,10 @@ export const updateMyAnnonce = async (req, res) => {
     }
 
     // 3. On applique la limite de 5 et on enregistre
-    annonce.images = finalImages.slice(0, 5);
+    annonce.images = sanitizeImages(finalImages.slice(0, 5));
 
     await annonce.save();
-    return res.json({ message: "Annonce modifiée avec succès.", annonce });
+    return res.json({ message: "Annonce modifiée avec succès.", annonce: serializeAnnonce(annonce) });
   } catch (error) {
     console.error("Erreur updateMyAnnonce:", error);
     return res.status(500).json({ message: "Erreur modification annonce.", error: error.message });

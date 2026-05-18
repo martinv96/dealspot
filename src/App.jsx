@@ -11,6 +11,7 @@ import AnnonceDetailPage from "./pages/AnnonceDetailPage";
 import UserProfilePage from "./pages/UserProfilePage";
 import FavoritesPage from "./pages/FavoritesPage";
 import MessagesPage from "./pages/MessagesPage";
+import AllAnnoncesPage from "./pages/AllAnnoncesPage";
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -26,6 +27,7 @@ export default function App() {
       <Route path="/" element={<HomePage />} />
       <Route path="/connexion" element={<LoginPage />} />
       <Route path="/inscription" element={<RegisterPage />} />
+      <Route path="/annonces" element={<AllAnnoncesPage />} />
       <Route path="/annonces/:id" element={<AnnonceDetailPage />} />
       <Route path="/vendeurs/:id" element={<UserProfilePage />} />
             <Route

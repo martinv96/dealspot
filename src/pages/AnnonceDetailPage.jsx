@@ -76,6 +76,7 @@ export default function AnnonceDetailPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isMarkingSold, setIsMarkingSold] = useState(false);
   const [error, setError] = useState("");
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [shareCopied, setShareCopied] = useState(false);
@@ -270,6 +271,29 @@ export default function AnnonceDetailPage() {
     } catch {
       setError("Suppression impossible.");
       setIsDeleting(false);
+    }
+  }
+
+  async function handleMarkAsSold() {
+    if (!annonce?.id || annonce.statut === "expirée") return;
+    if (!window.confirm("Marquer cette annonce comme vendue ?")) return;
+
+    try {
+      setIsMarkingSold(true);
+      setError("");
+      const response = await api.put("/annonces/" + id, {
+        statut: "expirée"
+      });
+
+      const updatedAnnonce = response.data?.annonce || null;
+      if (updatedAnnonce) {
+        setAnnonce(updatedAnnonce);
+        setEditForm((prev) => ({ ...prev, statut: updatedAnnonce.statut || prev.statut }));
+      }
+    } catch (markError) {
+      setError(markError?.response?.data?.message || "Impossible de marquer l'annonce comme vendue.");
+    } finally {
+      setIsMarkingSold(false);
     }
   }
 
@@ -503,6 +527,11 @@ export default function AnnonceDetailPage() {
                           {annonce.categorie}
                         </span>
                       )}
+                      {annonce.statut === "expirée" ? (
+                        <p className="annonce-meta" style={{ fontWeight: 700, color: "#d55353" }}>
+                          Statut: Vendue
+                        </p>
+                      ) : null}
                       <p className="annonce-meta">
                         <FaMapMarkerAlt /> {annonce.localisation}
                       </p>
@@ -558,9 +587,19 @@ export default function AnnonceDetailPage() {
                       <button
                         className="btn btn-primary"
                         onClick={() => setIsEditing(true)}
+                        disabled={annonce.statut === "expirée"}
                       >
                         <FaEdit /> Modifier
                       </button>
+                      {annonce.statut !== "expirée" ? (
+                        <button
+                          className="btn btn-outline"
+                          onClick={handleMarkAsSold}
+                          disabled={isMarkingSold}
+                        >
+                          {isMarkingSold ? "Mise a jour..." : "Marquer comme vendue"}
+                        </button>
+                      ) : null}
                       <button
                         className="btn btn-outline"
                         onClick={handleDelete}

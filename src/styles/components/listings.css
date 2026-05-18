@@ -75,11 +75,90 @@
   border-radius: 14px;
 }
 
+.badge--active {
+  background: #58b158;
+}
+
+.badge--sold {
+  background: #e05959;
+}
+
+.badge--draft {
+  background: #8b8f9b;
+}
+
 .listing-image {
   width: 100%;
   height: 198px;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
+  
   display: block;
+}
+
+.all-annonces-filters-wrap {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 14px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  margin-bottom: 14px;
+}
+
+.all-annonces-filters-grid {
+  display: grid;
+  grid-template-columns: 1.8fr 1.1fr 1fr 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.all-annonces-filters-grid input,
+.all-annonces-filters-grid select {
+  width: 100%;
+  border: 1px solid #d6d6d6;
+  border-radius: 8px;
+  height: 40px;
+  padding: 0 11px;
+  outline: none;
+  font-size: 0.9rem;
+  background: #fff;
+}
+
+.all-annonces-filters-grid input:focus,
+.all-annonces-filters-grid select:focus {
+  border-color: #58a6df;
+  box-shadow: 0 0 0 3px rgba(88, 166, 223, 0.16);
+}
+
+.all-annonces-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (max-width: 1100px) {
+  .all-annonces-filters-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .all-annonces-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 700px) {
+  .all-annonces-filters-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .all-annonces-actions {
+    justify-content: stretch;
+  }
+
+  .all-annonces-actions .btn {
+    flex: 1;
+  }
 }
 
 .listing-content {

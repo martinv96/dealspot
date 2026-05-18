@@ -45,7 +45,8 @@ function mapAnnonceToCard(annonce) {
     city: annonce.localisation || "Non précisée",
     date: formatRelativeDate(annonce.date_publication),
     images: Array.isArray(annonce.images) ? annonce.images : [],
-    badge: badgeByStatus[annonce.statut] || "Annonce"
+    badge: badgeByStatus[annonce.statut] || "Annonce",
+    badgeStatus: annonce.statut
   };
 }
 
