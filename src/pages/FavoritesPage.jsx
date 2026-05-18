@@ -5,9 +5,20 @@ import SiteFooter from "../components/SiteFooter";
 import { useFavorites } from "../hooks/useFavorites";
 
 const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://localhost:4000/api").replace(/\/api\/?$/, "");
+const IS_NGROK_ORIGIN = /ngrok-free\.dev|ngrok\.io/i.test(API_ORIGIN);
 
 const FALLBACK_IMAGE =
   "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='300'><rect width='100%25' height='100%25' fill='%23f2f2f2'/><text x='50%25' y='50%25' font-family='Arial' font-size='20' fill='%23909090' text-anchor='middle' dominant-baseline='middle'>DealSpot</text></svg>";
+
+function withNgrokBypass(url) {
+  if (!IS_NGROK_ORIGIN || typeof url !== "string" || url.startsWith("data:")) {
+    return url;
+  }
+
+  const [base, hash = ""] = url.split("#");
+  const separator = base.includes("?") ? "&" : "?";
+  return `${base}${separator}ngrok-skip-browser-warning=true${hash ? `#${hash}` : ""}`;
+}
 
 function resolveImage(value) {
   if (!value) return FALLBACK_IMAGE;
@@ -15,8 +26,8 @@ function resolveImage(value) {
     const normalizedPath = value.replace(/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/i, "");
     return API_ORIGIN + normalizedPath;
   }
-  if (value.startsWith("http") || value.startsWith("data:")) return value;
-  return API_ORIGIN + (value.startsWith("/") ? "" : "/") + value;
+  if (value.startsWith("http") || value.startsWith("data:")) return withNgrokBypass(value);
+  return withNgrokBypass(API_ORIGIN + (value.startsWith("/") ? "" : "/") + value);
 }
 
 function formatPrice(value) {

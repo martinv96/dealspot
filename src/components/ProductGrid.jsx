@@ -4,6 +4,17 @@ import { FaMapMarkerAlt, FaRegCalendarAlt } from "react-icons/fa";
 const FALLBACK_IMAGE =
   "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='640' height='420'><rect width='100%25' height='100%25' fill='%23f2f2f2'/><text x='50%25' y='50%25' font-family='Arial' font-size='24' fill='%23909090' text-anchor='middle' dominant-baseline='middle'>DealSpot</text></svg>";
 const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://localhost:4000/api").replace(/\/api\/?$/, "");
+const IS_NGROK_ORIGIN = /ngrok-free\.dev|ngrok\.io/i.test(API_ORIGIN);
+
+function withNgrokBypass(url) {
+  if (!IS_NGROK_ORIGIN || typeof url !== "string" || url.startsWith("data:")) {
+    return url;
+  }
+
+  const [base, hash = ""] = url.split("#");
+  const separator = base.includes("?") ? "&" : "?";
+  return `${base}${separator}ngrok-skip-browser-warning=true${hash ? `#${hash}` : ""}`;
+}
 
 function resolveImageUrl(value) {
   if (!value) {
@@ -19,14 +30,14 @@ function resolveImageUrl(value) {
   }
 
   if (typeof value === "string" && value.startsWith("/uploads/")) {
-    return API_ORIGIN + value;
+    return withNgrokBypass(API_ORIGIN + value);
   }
 
   if (typeof value === "string" && value.startsWith("uploads/")) {
-    return API_ORIGIN + "/" + value;
+    return withNgrokBypass(API_ORIGIN + "/" + value);
   }
 
-  return value;
+  return withNgrokBypass(value);
 }
 
 function getImageSource(item) {
