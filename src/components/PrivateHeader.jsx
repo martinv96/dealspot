@@ -7,7 +7,9 @@ import {
   FaHeart,
   FaRegCommentDots,
   FaUser,
-  FaSignOutAlt
+  FaSignOutAlt,
+  FaBars,
+  FaTimes
 } from "react-icons/fa";
 import logo from "../assets/logo3.png";
 import { useAuth } from "../context/AuthContext";
@@ -20,8 +22,13 @@ export default function PrivateHeader() {
   const location = useLocation();
   const { favorites } = useFavorites();
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const isOnMessagesPage = location.pathname.startsWith("/messages");
   const visibleUnreadMessages = isOnMessagesPage ? 0 : unreadMessages;
+
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     let cancelled = false;
@@ -57,30 +64,43 @@ export default function PrivateHeader() {
   }, [isOnMessagesPage]);
 
   function handleLogout() {
+    setIsMenuOpen(false);
     logout();
     navigate("/connexion");
   }
 
   return (
     <header className="topbar">
-      <Link to="/app" className="brand">
-        <img src={logo} alt="logo Dealspot" className="brand-logo" />
-        <span>DealSpot</span>
-      </Link>
+      <div className="topbar-main">
+        <Link to="/app" className="brand">
+          <img src={logo} alt="logo Dealspot" className="brand-logo" />
+          <span>DealSpot</span>
+        </Link>
 
-      <nav className="nav nav-private">
-        <Link to="/app" className="nav-link"><FaHome /> Accueil</Link>
-        <Link to="/mes-annonces" className="nav-link"><FaRegFileAlt /> Mes annonces</Link>
-        <Link to="/creer-annonce" className="nav-link"><FaRegFileAlt /> Créer une annonce</Link>
-        <Link to="/favoris" className="nav-link nav-favoris">
+        <button
+          type="button"
+          className="topbar-menu-toggle"
+          onClick={() => setIsMenuOpen((prev) => !prev)}
+          aria-label={isMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+          aria-expanded={isMenuOpen}
+        >
+          {isMenuOpen ? <FaTimes /> : <FaBars />}
+        </button>
+      </div>
+
+      <nav className={`nav nav-private${isMenuOpen ? " open" : ""}`}>
+        <Link to="/app" className="nav-link" onClick={() => setIsMenuOpen(false)}><FaHome /> Accueil</Link>
+        <Link to="/mes-annonces" className="nav-link" onClick={() => setIsMenuOpen(false)}><FaRegFileAlt /> Mes annonces</Link>
+        <Link to="/creer-annonce" className="nav-link" onClick={() => setIsMenuOpen(false)}><FaRegFileAlt /> Créer une annonce</Link>
+        <Link to="/favoris" className="nav-link nav-favoris" onClick={() => setIsMenuOpen(false)}>
           {favorites.length > 0 ? <FaHeart className="nav-heart-active" /> : <FaRegHeart />}
           Favoris
         </Link>
-        <Link to="/messages" className="nav-link">
+        <Link to="/messages" className="nav-link" onClick={() => setIsMenuOpen(false)}>
           <FaRegCommentDots /> Messages
           {visibleUnreadMessages > 0 && <span className="nav-badge">{visibleUnreadMessages}</span>}
         </Link>
-        <Link to="/profil" className="nav-link"><FaUser /> Profil</Link>
+        <Link to="/profil" className="nav-link" onClick={() => setIsMenuOpen(false)}><FaUser /> Profil</Link>
         <button onClick={handleLogout} className="nav-link nav-logout" type="button">
           <FaSignOutAlt /> Deconnexion
         </button>
