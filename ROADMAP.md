@@ -82,8 +82,6 @@
 - ProductGrid utilise les thumbnails, AnnonceDetailPage utilise main
 - Fichiers: `upload.js` (middleware), `annonce.controller.js`, `ProductGrid.jsx`
 
-<!-- reprendre ICI -->
-
 ### 8. Email verification + Forgot password (2-3h)
 
 **Verification:**
@@ -97,6 +95,8 @@
 - `POST /api/auth/reset` → valide token + hash nouveau password + login
 
 - Fichiers: `auth.routes.js`, `auth.controller.js`, `VerifyPage.jsx`, `ForgotPasswordPage.jsx`, `ResetPasswordPage.jsx`
+
+<!-- reprendre ICI -->
 
 ### 8 bis. Intégration NoSQL (3-5h)
 

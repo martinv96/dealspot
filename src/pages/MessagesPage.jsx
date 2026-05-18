@@ -89,13 +89,17 @@ export default function MessagesPage() {
     }
   }
 
-  async function loadThread(current) {
+  async function loadThread(current, options = {}) {
+    const { silent = false } = options;
+
     if (!current?.otherUser?.id) {
       setThread([]);
       return;
     }
 
-    setLoadingThread(true);
+    if (!silent) {
+      setLoadingThread(true);
+    }
     try {
       const res = await api.get(`/messages/threads/${current.otherUser.id}`, {
         params: current.annonceId ? { annonceId: current.annonceId } : undefined
@@ -114,7 +118,9 @@ export default function MessagesPage() {
     } catch (err) {
       setError(err?.response?.data?.message || "Impossible de charger la conversation.");
     } finally {
-      setLoadingThread(false);
+      if (!silent) {
+        setLoadingThread(false);
+      }
     }
   }
 
@@ -145,7 +151,7 @@ export default function MessagesPage() {
     }
 
     pollRef.current = setInterval(() => {
-      loadThread(selected);
+      loadThread(selected, { silent: true });
       loadConversations(true);
     }, 4500);
 
@@ -173,7 +179,7 @@ export default function MessagesPage() {
         contenu
       });
       setDraft("");
-      await loadThread(selected);
+      await loadThread(selected, { silent: true });
       await loadConversations(true);
       setSearchParams({});
     } catch (err) {

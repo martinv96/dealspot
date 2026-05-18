@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import { AuthProvider } from "./context/AuthContext";
 import "./styles/app.css";
+import "./index.css";
 
 if (typeof window !== "undefined" && typeof window.process === "undefined") {
   window.process = { env: {} };
