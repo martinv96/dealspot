@@ -72,7 +72,9 @@ export default function ProductGrid({ items, showBadge = false }) {
           {showBadge && item.badge ? <div className={getBadgeClass(item)}>{item.badge}</div> : null}
 
           <Link to={"/annonces/" + item.id} className="listing-card-link">
-            <img src={getImageSource(item)} alt={item.title} className="listing-image" />
+            <div className="listing-image-wrap">
+              <img src={getImageSource(item)} alt={item.title} className="listing-image" />
+            </div>
 
             <div className="listing-content">
               <h3>{item.title}</h3>
