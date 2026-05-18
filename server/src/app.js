@@ -1,8 +1,8 @@
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
+import "./config/env.js";
 import { sequelize } from "./config/database.js";
 import authRoutes from "./routes/auth.routes.js";
 import annonceRoutes from "./routes/annonce.routes.js";
@@ -11,17 +11,28 @@ import reportRoutes from "./routes/report.routes.js";
 import favoriteRoutes from "./routes/favorite.routes.js";
 import "./models/index.js";
 
-
-dotenv.config();
-
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const uploadsDir = path.resolve(__dirname, "../uploads");
 
+const configuredOrigins = (process.env.CORS_ORIGINS || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const corsOrigins = configuredOrigins.length
+  ? configuredOrigins
+  : [
+      process.env.FRONTEND_URL,
+      process.env.FRONTEND_STAGING_URL,
+      "http://localhost:5173",
+      "http://localhost:5174"
+    ].filter(Boolean);
+
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:5174"],
+    origin: corsOrigins,
     credentials: true
   })
 );
