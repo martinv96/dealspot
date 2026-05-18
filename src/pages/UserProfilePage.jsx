@@ -8,7 +8,7 @@ import api from "../services/api";
 
 const FALLBACK_IMAGE =
   "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='300'><rect width='100%25' height='100%25' fill='%23f2f2f2'/><text x='50%25' y='50%25' font-family='Arial' font-size='20' fill='%23909090' text-anchor='middle' dominant-baseline='middle'>DealSpot</text></svg>";
-const API_ORIGIN = "http://localhost:4000";
+const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://localhost:4000/api").replace(/\/api\/?$/, "");
 
 function resolveImage(value) {
   if (!value) return FALLBACK_IMAGE;
