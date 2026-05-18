@@ -50,7 +50,7 @@
 
 ---
 
-<!-- reprendre ICI -->
+
 
 ## 🟠 PHASE 2 — Solidifier l'app
 
@@ -61,6 +61,8 @@
 - Routes: `POST /api/favorites`, `GET /api/favorites`, `DELETE /api/favorites/:id`
 - Refactor hook `useFavorites.js` pour appels API
 - UI identique, même comportement (optimistic update)
+
+<!-- reprendre ICI -->
 
 ### 6. Validation complète (2-3h)
 

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import PublicHeader from "../components/PublicHeader";
 import SiteFooter from "../components/SiteFooter";
 import { useAuth } from "../context/AuthContext";
+import { validateLoginForm } from "../utils/validation";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -18,7 +19,12 @@ export default function LoginPage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    setError("");
+    const nextError = validateLoginForm(form);
+    setError(nextError);
+    if (nextError) {
+      return;
+    }
+
     setLoading(true);
 
     try {

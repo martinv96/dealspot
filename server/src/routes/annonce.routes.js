@@ -9,14 +9,15 @@ import {
 } from "../controllers/annonce.controller.js";
 import { authMiddleware } from "../middleware/auth.js";
 import upload from "../middleware/upload.js";
+import { validateAnnonceBody, validateBody } from "../middleware/validation.js";
 
 const router = express.Router();
 
 router.get("/", listPublishedAnnonces);
 router.get("/me", authMiddleware, listMyAnnonces);
 router.get("/:id", getAnnonceById);
-router.post("/", authMiddleware, upload.array("images", 5), createAnnonce);
-router.put("/:id", authMiddleware, upload.array("images", 5), updateMyAnnonce);
+router.post("/", authMiddleware, upload.array("images", 5), validateBody((body) => validateAnnonceBody(body)), createAnnonce);
+router.put("/:id", authMiddleware, upload.array("images", 5), validateBody((body) => validateAnnonceBody(body, { partial: true })), updateMyAnnonce);
 router.delete("/:id", authMiddleware, deleteMyAnnonce);
 
 export default router;

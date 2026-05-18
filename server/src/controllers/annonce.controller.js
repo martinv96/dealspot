@@ -102,8 +102,7 @@ function getAuthenticatedUserIdFromHeader(req) {
 
 export const createAnnonce = async (req, res) => {
   try {
-    // On récupère les données envoyées par le front
-    const { titre, description, prix, categorie, localisation, statut, images } = req.body;
+    const { titre, description, prix, categorie, localisation, statut, images } = req.validatedBody || req.body;
 
     // L'id de l'utilisateur viendra normalement du middleware auth (req.user.id)
     const userId = req.user.id; 
@@ -292,7 +291,7 @@ export const updateMyAnnonce = async (req, res) => {
     }
 
     // On récupère 'existingImages' depuis le body (envoyé par le front)
-    const { titre, description, prix, categorie, localisation, statut, existingImages } = req.body;
+    const { titre, description, prix, categorie, localisation, statut, existingImages } = req.validatedBody || req.body;
     const newUploadedImages = getUploadedImageUrls(req);
 
     // Mise à jour des champs textes

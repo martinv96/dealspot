@@ -47,11 +47,7 @@ export async function getUserPublicProfile(req, res) {
 
 export async function register(req, res) {
   try {
-    const { pseudo, email, password, localisation } = req.body;
-
-    if (!pseudo || !email || !password) {
-      return res.status(400).json({ message: "Pseudo, email et mot de passe sont requis." });
-    }
+    const { pseudo, email, password, localisation } = req.validatedBody || req.body;
 
     // Validation de la sécurité du mot de passe
     if (!isPasswordSecure(password)) {
@@ -87,11 +83,7 @@ export async function register(req, res) {
 
 export async function login(req, res) {
   try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ message: "Email et mot de passe requis." });
-    }
+    const { email, password } = req.validatedBody || req.body;
 
     const user = await User.findOne({ where: { email } });
     if (!user) {
@@ -136,15 +128,11 @@ export async function me(req, res) {
 
 export async function updateMe(req, res) {
   try {
-    const { pseudo, email, telephone, localisation } = req.body;
+    const { pseudo, email, telephone, localisation } = req.validatedBody || req.body;
     const user = await User.findByPk(req.user.id);
 
     if (!user) {
       return res.status(404).json({ message: "Utilisateur introuvable." });
-    }
-
-    if (!pseudo || !email) {
-      return res.status(400).json({ message: "Pseudo et email sont requis." });
     }
 
     const existing = await User.findOne({ where: { email } });
@@ -172,19 +160,11 @@ export async function updateMe(req, res) {
 
 export async function changePassword(req, res) {
   try {
-    const { currentPassword, newPassword, confirmPassword } = req.body;
+    const { currentPassword, newPassword, confirmPassword } = req.validatedBody || req.body;
     const user = await User.findByPk(req.user.id);
 
     if (!user) {
       return res.status(404).json({ message: "Utilisateur introuvable." });
-    }
-
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      return res.status(400).json({ message: "Tous les champs sont requis." });
-    }
-
-    if (newPassword !== confirmPassword) {
-      return res.status(400).json({ message: "La confirmation du mot de passe ne correspond pas." });
     }
 
     // Validation de la sécurité du nouveau mot de passe

@@ -4,6 +4,7 @@ import { FaImage } from "react-icons/fa";
 import PrivateHeader from "../components/PrivateHeader";
 import SiteFooter from "../components/SiteFooter";
 import api from "../services/api";
+import { validateAnnonceForm } from "../utils/validation";
 
 const CreateAnnonce = () => {
   const navigate = useNavigate();
@@ -44,6 +45,12 @@ const CreateAnnonce = () => {
   };
 
   const handleSubmit = async (action) => {
+    const nextError = validateAnnonceForm(formData);
+    if (nextError) {
+      setFeedback({ type: "error", message: nextError });
+      return;
+    }
+
     try {
       setFeedback({ type: "", message: "" });
       setIsSubmitting(true);

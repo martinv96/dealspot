@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import PublicHeader from "../components/PublicHeader";
 import SiteFooter from "../components/SiteFooter";
 import { useAuth } from "../context/AuthContext";
+import { validateRegisterForm } from "../utils/validation";
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -25,10 +26,9 @@ export default function RegisterPage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    setError("");
-
-    if (form.password !== form.confirmPassword) {
-      setError("Les mots de passe ne correspondent pas.");
+    const nextError = validateRegisterForm(form);
+    setError(nextError);
+    if (nextError) {
       return;
     }
 
