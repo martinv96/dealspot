@@ -3,11 +3,13 @@ import createUserModel from "./User.js";
 import createAnnonceModel from "./Annonce.js";
 import createMessageModel from "./Message.js";
 import createReportModel from "./Report.js";
+import createFavoriteModel from "./Favorite.js";
 
 const User = createUserModel(sequelize);
 const Annonce = createAnnonceModel(sequelize);
 const Message = createMessageModel(sequelize);
 const Report = createReportModel(sequelize);
+const Favorite = createFavoriteModel(sequelize);
 
 // --- Définition des Relations (Associations) ---
 // Un utilisateur possède plusieurs annonces
@@ -29,13 +31,20 @@ Annonce.hasMany(Report, { foreignKey: "annonce_id", as: "reports"});
 Report.belongsTo(User, {foreignKey: "user_id", as: "reporter"});
 Report.belongsTo(Annonce, { foreignKey: "annonce_id", as: "annonce"});
 
+// favorites
+User.hasMany(Favorite, { foreignKey: "user_id", as: "favorites" });
+Annonce.hasMany(Favorite, { foreignKey: "annonce_id", as: "favorites" });
+Favorite.belongsTo(User, { foreignKey: "user_id", as: "user" });
+Favorite.belongsTo(Annonce, { foreignKey: "annonce_id", as: "annonce" });
+
 // On exporte tout dans un objet "db" par défaut pour le controller
 const db = {
   sequelize,
   User,
   Annonce,
   Message,
-  Report
+  Report,
+  Favorite
 };
 
 export default db;

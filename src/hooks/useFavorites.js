@@ -1,61 +1,104 @@
 import { useCallback, useEffect, useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import api from "../services/api";
 
-const STORAGE_KEY = "dealspot_favorites";
-
-function readStorage() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-  } catch {
-    return [];
-  }
+function normalizeFavorite(item) {
+  if (!item || !item.id) return null;
+  return {
+    id: item.id,
+    titre: item.titre || "Annonce",
+    prix: item.prix,
+    localisation: item.localisation || "Non précisée",
+    date_publication: item.date_publication,
+    images: Array.isArray(item.images) ? item.images : [],
+    categorie: item.categorie,
+    statut: item.statut
+  };
 }
 
 export function useFavorites() {
-  const [favorites, setFavorites] = useState(readStorage);
+  const { isAuthenticated } = useAuth();
+  const [favorites, setFavorites] = useState([]);
 
-  // Sync across tabs
-  useEffect(() => {
-    function onStorage(e) {
-      if (e.key === STORAGE_KEY) setFavorites(readStorage());
+  const loadFavorites = useCallback(async () => {
+    if (!isAuthenticated) {
+      setFavorites([]);
+      return;
     }
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, []);
+
+    const { data } = await api.get("/favorites");
+    const next = (data?.favorites || []).map(normalizeFavorite).filter(Boolean);
+    setFavorites(next);
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    loadFavorites().catch(() => {
+      setFavorites([]);
+    });
+  }, [loadFavorites]);
 
   const isFavorite = useCallback(
     (id) => favorites.some((f) => f.id === id),
     [favorites]
   );
 
-  const toggleFavorite = useCallback((annonce) => {
-    setFavorites((prev) => {
-      const exists = prev.some((f) => f.id === annonce.id);
-      const next = exists
-        ? prev.filter((f) => f.id !== annonce.id)
-        : [
-            ...prev,
-            {
-              id: annonce.id,
-              titre: annonce.titre,
-              prix: annonce.prix,
-              localisation: annonce.localisation,
-              date_publication: annonce.date_publication,
-              images: annonce.images || [],
-              categorie: annonce.categorie
-            }
-          ];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      return next;
-    });
-  }, []);
+  const toggleFavorite = useCallback(
+    async (annonce) => {
+      if (!isAuthenticated || !annonce?.id) {
+        return;
+      }
 
-  const removeFavorite = useCallback((id) => {
-    setFavorites((prev) => {
-      const next = prev.filter((f) => f.id !== id);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      return next;
-    });
-  }, []);
+      const fallbackItem = normalizeFavorite(annonce);
+      const previous = favorites;
+      const exists = previous.some((f) => f.id === annonce.id);
+
+      if (exists) {
+        setFavorites((prev) => prev.filter((f) => f.id !== annonce.id));
+        try {
+          await api.delete("/favorites/" + annonce.id);
+        } catch {
+          setFavorites(previous);
+        }
+        return;
+      }
+
+      if (fallbackItem) {
+        setFavorites((prev) => [...prev, fallbackItem]);
+      }
+
+      try {
+        const { data } = await api.post("/favorites", { annonceId: annonce.id });
+        const serverItem = normalizeFavorite(data?.favorite);
+        if (serverItem) {
+          setFavorites((prev) => {
+            const without = prev.filter((f) => f.id !== serverItem.id);
+            return [...without, serverItem];
+          });
+        }
+      } catch {
+        setFavorites(previous);
+      }
+    },
+    [favorites, isAuthenticated]
+  );
+
+  const removeFavorite = useCallback(
+    async (id) => {
+      if (!isAuthenticated || !id) {
+        return;
+      }
+
+      const previous = favorites;
+      setFavorites((prev) => prev.filter((f) => f.id !== id));
+
+      try {
+        await api.delete("/favorites/" + id);
+      } catch {
+        setFavorites(previous);
+      }
+    },
+    [favorites, isAuthenticated]
+  );
 
   return { favorites, isFavorite, toggleFavorite, removeFavorite };
 }

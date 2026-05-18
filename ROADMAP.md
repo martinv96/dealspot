@@ -25,7 +25,7 @@
 - Validation client + toast success/error
 - Fichiers: `Report.js`, `report.routes.js`, `report.controller.js`, `AnnonceDetailPage.jsx`, `.env`
 
-<!-- reprendre ICI -->
+
 
 ### 3. Pagination API (2h)
 
@@ -49,6 +49,8 @@
 - Fichiers: `annonce.controller.js`, `HomePage.jsx`, `categories.css`
 
 ---
+
+<!-- reprendre ICI -->
 
 ## 🟠 PHASE 2 — Solidifier l'app
 
