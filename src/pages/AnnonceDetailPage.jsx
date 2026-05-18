@@ -61,6 +61,10 @@ function cleanImages(rawImages) {
   return rawImages
     .filter((value) => typeof value === "string" && value.trim().length > 0)
     .map((value) => {
+      if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//i.test(value)) {
+        const normalizedPath = value.replace(/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/i, "");
+        return API_ORIGIN + normalizedPath;
+      }
       if (value.startsWith("http") || value.startsWith("data:")) return value;
       return API_ORIGIN + (value.startsWith("/") ? "" : "/") + value;
     });

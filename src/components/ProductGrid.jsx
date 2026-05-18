@@ -11,6 +11,10 @@ function resolveImageUrl(value) {
   }
 
   if (typeof value === "string" && (value.startsWith("http://") || value.startsWith("https://"))) {
+    if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//i.test(value)) {
+      const normalizedPath = value.replace(/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/i, "");
+      return API_ORIGIN + normalizedPath;
+    }
     return value;
   }
 
