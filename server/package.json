@@ -6,8 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon src/app.js",
-    "start": "node src/app.js",
-    "start:render": "node scripts/preflight.mjs && node src/app.js"
+    "start": "node src/app.js"
   },
   "keywords": [],
   "author": "",

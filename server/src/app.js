@@ -30,9 +30,27 @@ const corsOrigins = configuredOrigins.length
       "http://localhost:5174"
     ].filter(Boolean);
 
+function isAllowedOrigin(origin) {
+  if (!origin) return true;
+  if (corsOrigins.includes(origin)) return true;
+
+  // Useful for preview URLs during demos/exams.
+  if (/^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin)) return true;
+  if (/^https:\/\/[a-z0-9-]+\.ngrok-free\.dev$/i.test(origin)) return true;
+
+  return false;
+}
+
 app.use(
   cors({
-    origin: corsOrigins,
+    origin(origin, callback) {
+      if (isAllowedOrigin(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error("Origin non autorisee par CORS."));
+    },
     credentials: true
   })
 );
