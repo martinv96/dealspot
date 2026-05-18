@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import PublicHeader from "../components/PublicHeader";
 import SiteFooter from "../components/SiteFooter";
 import { useAuth } from "../context/AuthContext";
@@ -8,9 +8,11 @@ import { validateLoginForm } from "../utils/validation";
 export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
+  const infoMessage = location.state?.info || "";
   const [loading, setLoading] = useState(false);
 
   function handleChange(e) {
@@ -69,11 +71,16 @@ export default function LoginPage() {
             required
           />
 
+          {infoMessage && <div className="form-success">{infoMessage}</div>}
           {error && <div className="form-error">{error}</div>}
 
           <button className="btn btn-auth" disabled={loading} type="submit">
             {loading ? "Connexion..." : "Se connecter"}
           </button>
+
+          <p className="auth-bottom">
+            <Link to="/mot-de-passe-oublie">Mot de passe oublié ?</Link>
+          </p>
 
           <p className="auth-bottom">
             Vous n'avez pas de compte ? <Link to="/inscription">Créer un compte</Link>

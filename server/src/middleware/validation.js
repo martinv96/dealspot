@@ -221,3 +221,43 @@ export function validateBody(validateFn) {
     return next();
   };
 }
+
+export function validateForgotPasswordBody(body) {
+  const email = validateEmail(body.email);
+  if (email.error) return email;
+
+  return {
+    value: {
+      email: email.value
+    }
+  };
+}
+
+export function validateResetPasswordBody(body) {
+  const token = trimString(body.token);
+  if (!token) {
+    return { error: "Le token de réinitialisation est requis." };
+  }
+
+  const newPassword = typeof body.newPassword === "string" ? body.newPassword : "";
+  const confirmPassword = typeof body.confirmPassword === "string" ? body.confirmPassword : "";
+
+  if (!newPassword || !confirmPassword) {
+    return { error: "Le nouveau mot de passe et sa confirmation sont requis." };
+  }
+
+  if (newPassword !== confirmPassword) {
+    return { error: "La confirmation du mot de passe ne correspond pas." };
+  }
+
+  const password = validatePassword(newPassword, "Le nouveau mot de passe");
+  if (password.error) return password;
+
+  return {
+    value: {
+      token,
+      newPassword,
+      confirmPassword
+    }
+  };
+}

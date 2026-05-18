@@ -34,13 +34,20 @@ export default function RegisterPage() {
 
     setLoading(true);
     try {
-      await register({
+      const { data } = await register({
         pseudo: form.pseudo,
         email: form.email,
         localisation: form.localisation,
         password: form.password
       });
-      navigate("/connexion");
+
+      navigate("/connexion", {
+        state: {
+          info:
+            data?.message ||
+            "Inscription réussie. Vérifiez votre boîte mail et cliquez sur le lien de vérification avant de vous connecter."
+        }
+      });
     } catch (err) {
       setError(err?.response?.data?.message || "Inscription impossible.");
     } finally {

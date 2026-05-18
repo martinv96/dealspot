@@ -12,6 +12,9 @@ import UserProfilePage from "./pages/UserProfilePage";
 import FavoritesPage from "./pages/FavoritesPage";
 import MessagesPage from "./pages/MessagesPage";
 import AllAnnoncesPage from "./pages/AllAnnoncesPage";
+import VerifyPage from "./pages/VerifyPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -27,6 +30,9 @@ export default function App() {
       <Route path="/" element={<HomePage />} />
       <Route path="/connexion" element={<LoginPage />} />
       <Route path="/inscription" element={<RegisterPage />} />
+      <Route path="/verification-email" element={<VerifyPage />} />
+      <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
+      <Route path="/reinitialiser-mot-de-passe" element={<ResetPasswordPage />} />
       <Route path="/annonces" element={<AllAnnoncesPage />} />
       <Route path="/annonces/:id" element={<AnnonceDetailPage />} />
       <Route path="/vendeurs/:id" element={<UserProfilePage />} />

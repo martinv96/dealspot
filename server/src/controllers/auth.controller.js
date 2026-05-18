@@ -1,11 +1,14 @@
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import jwt from "jsonwebtoken";
+import { Op } from "sequelize";
 import db from "../models/index.js";
-const User = db.User;
+import { sendResetPasswordEmail, sendVerificationEmail } from "../services/mail.service.js";
 
-/**
- * Utilitaire pour valider la force du mot de passe
- */
+const User = db.User;
+const UserSecurity = db.UserSecurity;
+const AuthToken = db.AuthToken;
+
 function isPasswordSecure(password) {
   const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
   return regex.test(password);
@@ -21,6 +24,76 @@ function userDto(user) {
     localisation: user.localisation,
     date_inscription: user.date_inscription
   };
+}
+
+function hashToken(token) {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+function generatePlainToken() {
+  return crypto.randomBytes(32).toString("hex");
+}
+
+async function ensureUserSecurity(userId, defaults = {}) {
+  const [security] = await UserSecurity.findOrCreate({
+    where: { user_id: userId },
+    defaults: {
+      user_id: userId,
+      email_verified: false,
+      ...defaults
+    }
+  });
+
+  return security;
+}
+
+async function issueAuthToken(userId, type, expiresInMs) {
+  const plainToken = generatePlainToken();
+  const tokenHash = hashToken(plainToken);
+  const expiresAt = new Date(Date.now() + expiresInMs);
+
+  await AuthToken.update(
+    { used_at: new Date() },
+    {
+      where: {
+        user_id: userId,
+        type,
+        used_at: null,
+        expires_at: { [Op.gt]: new Date() }
+      }
+    }
+  );
+
+  await AuthToken.create({
+    user_id: userId,
+    type,
+    token_hash: tokenHash,
+    expires_at: expiresAt
+  });
+
+  return plainToken;
+}
+
+async function findValidAuthToken(plainToken, type) {
+  const tokenHash = hashToken(plainToken);
+  return AuthToken.findOne({
+    where: {
+      token_hash: tokenHash,
+      type,
+      used_at: null,
+      expires_at: { [Op.gt]: new Date() }
+    }
+  });
+}
+
+async function findAuthTokenByHash(plainToken, type) {
+  const tokenHash = hashToken(plainToken);
+  return AuthToken.findOne({
+    where: {
+      token_hash: tokenHash,
+      type
+    }
+  });
 }
 
 export async function getUserPublicProfile(req, res) {
@@ -49,10 +122,9 @@ export async function register(req, res) {
   try {
     const { pseudo, email, password, localisation } = req.validatedBody || req.body;
 
-    // Validation de la sécurité du mot de passe
     if (!isPasswordSecure(password)) {
-      return res.status(400).json({ 
-        message: "Le mot de passe doit contenir au moins 8 caractères, une majuscule, un chiffre et un caractère spécial (@$!%*?&)." 
+      return res.status(400).json({
+        message: "Le mot de passe doit contenir au moins 8 caractères, une majuscule, un chiffre et un caractère spécial (@$!%*?&)."
       });
     }
 
@@ -71,8 +143,21 @@ export async function register(req, res) {
       role: "acheteur"
     });
 
+    await ensureUserSecurity(user.id, { email_verified: false });
+
+    try {
+      const verifyToken = await issueAuthToken(user.id, "verify_email", 24 * 60 * 60 * 1000);
+      await sendVerificationEmail({
+        email: user.email,
+        pseudo: user.pseudo,
+        token: verifyToken
+      });
+    } catch (mailError) {
+      console.error("Erreur envoi email verification:", mailError.message);
+    }
+
     return res.status(201).json({
-      message: "Compte créé avec succès.",
+      message: "Compte créé avec succès. Vérifiez votre adresse email pour activer votre compte.",
       user: userDto(user)
     });
   } catch (error) {
@@ -95,6 +180,13 @@ export async function login(req, res) {
       return res.status(401).json({ message: "Identifiants invalides." });
     }
 
+    const security = await UserSecurity.findOne({ where: { user_id: user.id } });
+    if (security && !security.email_verified) {
+      return res.status(403).json({
+        message: "Votre adresse email n'est pas encore vérifiée. Consultez votre boîte mail."
+      });
+    }
+
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role, pseudo: user.pseudo },
       process.env.JWT_SECRET,
@@ -108,6 +200,101 @@ export async function login(req, res) {
   } catch (error) {
     console.error("Erreur login:", error);
     return res.status(500).json({ message: "Erreur serveur à la connexion." });
+  }
+}
+
+export async function verifyEmail(req, res) {
+  try {
+    const token = String(req.query.token || "").trim();
+    if (!token) {
+      return res.status(400).json({ message: "Token de vérification manquant." });
+    }
+
+    const authToken = await findValidAuthToken(token, "verify_email");
+    if (!authToken) {
+      const anyToken = await findAuthTokenByHash(token, "verify_email");
+      if (anyToken && anyToken.used_at) {
+        const security = await UserSecurity.findOne({ where: { user_id: anyToken.user_id } });
+        if (security?.email_verified) {
+          return res.json({ message: "Adresse email déjà vérifiée." });
+        }
+      }
+
+      return res.status(400).json({ message: "Lien de vérification invalide ou expiré." });
+    }
+
+    const security = await ensureUserSecurity(authToken.user_id, { email_verified: false });
+    security.email_verified = true;
+    security.email_verified_at = new Date();
+    await security.save();
+
+    authToken.used_at = new Date();
+    await authToken.save();
+
+    return res.json({ message: "Adresse email vérifiée avec succès." });
+  } catch (error) {
+    console.error("Erreur verifyEmail:", error);
+    return res.status(500).json({ message: "Erreur serveur lors de la vérification de l'email." });
+  }
+}
+
+export async function forgotPassword(req, res) {
+  try {
+    const { email } = req.validatedBody || req.body;
+
+    const user = await User.findOne({ where: { email } });
+    if (user) {
+      try {
+        const resetToken = await issueAuthToken(user.id, "reset_password", 60 * 60 * 1000);
+        await sendResetPasswordEmail({
+          email: user.email,
+          pseudo: user.pseudo,
+          token: resetToken
+        });
+      } catch (mailError) {
+        console.error("Erreur envoi email reset password:", mailError.message);
+      }
+    }
+
+    return res.json({
+      message: "Si un compte existe avec cet email, un lien de réinitialisation a été envoyé."
+    });
+  } catch (error) {
+    console.error("Erreur forgotPassword:", error);
+    return res.status(500).json({ message: "Erreur serveur lors de la demande de réinitialisation." });
+  }
+}
+
+export async function resetPassword(req, res) {
+  try {
+    const { token, newPassword } = req.validatedBody || req.body;
+
+    if (!isPasswordSecure(newPassword)) {
+      return res.status(400).json({
+        message: "Le nouveau mot de passe doit contenir au moins 8 caractères, une majuscule, un chiffre et un caractère spécial (@$!%*?&)."
+      });
+    }
+
+    const authToken = await findValidAuthToken(token, "reset_password");
+    if (!authToken) {
+      return res.status(400).json({ message: "Lien de réinitialisation invalide ou expiré." });
+    }
+
+    const user = await User.findByPk(authToken.user_id);
+    if (!user) {
+      return res.status(404).json({ message: "Utilisateur introuvable." });
+    }
+
+    user.mot_de_passe = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    authToken.used_at = new Date();
+    await authToken.save();
+
+    return res.json({ message: "Votre mot de passe a été réinitialisé avec succès." });
+  } catch (error) {
+    console.error("Erreur resetPassword:", error);
+    return res.status(500).json({ message: "Erreur serveur lors de la réinitialisation du mot de passe." });
   }
 }
 
@@ -160,22 +347,20 @@ export async function updateMe(req, res) {
 
 export async function changePassword(req, res) {
   try {
-    const { currentPassword, newPassword, confirmPassword } = req.validatedBody || req.body;
+    const { currentPassword, newPassword } = req.validatedBody || req.body;
     const user = await User.findByPk(req.user.id);
 
     if (!user) {
       return res.status(404).json({ message: "Utilisateur introuvable." });
     }
 
-    // Validation de la sécurité du nouveau mot de passe
     if (!isPasswordSecure(newPassword)) {
-      return res.status(400).json({ 
-        message: "Le nouveau mot de passe doit contenir au moins 8 caractères, une majuscule, un chiffre et un caractère spécial (@$!%*?&)." 
+      return res.status(400).json({
+        message: "Le nouveau mot de passe doit contenir au moins 8 caractères, une majuscule, un chiffre et un caractère spécial (@$!%*?&)."
       });
     }
 
     const valid = await bcrypt.compare(currentPassword, user.mot_de_passe);
-
     if (!valid) {
       return res.status(401).json({ message: "Mot de passe actuel incorrect." });
     }

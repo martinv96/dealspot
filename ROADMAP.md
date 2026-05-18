@@ -62,7 +62,7 @@
 - Refactor hook `useFavorites.js` pour appels API
 - UI identique, même comportement (optimistic update)
 
-<!-- reprendre ICI -->
+
 
 ### 6. Validation complète (2-3h)
 
@@ -72,6 +72,8 @@
 
 - Fichiers: `validation.js` (middleware), `annonce.controller.js`, `auth.controller.js`, `CreateAnnonce.jsx`, `LoginPage.jsx`
 
+
+<!-- a voir pour la partie 7 -->
 ### 7. Image optimization (2-3h)
 
 - `npm install sharp`
@@ -79,6 +81,8 @@
 - Créer thumbnail (200x200) + main (800x600)
 - ProductGrid utilise les thumbnails, AnnonceDetailPage utilise main
 - Fichiers: `upload.js` (middleware), `annonce.controller.js`, `ProductGrid.jsx`
+
+<!-- reprendre ICI -->
 
 ### 8. Email verification + Forgot password (2-3h)
 

@@ -15,6 +15,22 @@ function isMailConfigured(config) {
   return Boolean(config.host && config.port && config.user && config.pass && config.adminEmail && config.from);
 }
 
+function createTransporter(config) {
+  return nodemailer.createTransport({
+    host: config.host,
+    port: config.port,
+    secure: config.port === 465,
+    auth: {
+      user: config.user,
+      pass: config.pass
+    }
+  });
+}
+
+function getFrontendUrl() {
+  return process.env.FRONTEND_URL || "http://localhost:5173";
+}
+
 function generateReportEmailHTML({ report, annonce, reporter }) {
   const motifLabel = {
     arnaque: "🚨 Arnaque / Fraude",
@@ -229,15 +245,7 @@ export async function sendAdminReportEmail({ report, annonce, reporter }) {
     return { sent: false };
   }
 
-  const transporter = nodemailer.createTransport({
-    host: config.host,
-    port: config.port,
-    secure: config.port === 465,
-    auth: {
-      user: config.user,
-      pass: config.pass
-    }
-  });
+  const transporter = createTransporter(config);
 
   const annonceTitle = annonce?.titre || `Annonce #${report.annonce_id}`;
   const subject = `[DealSpot] Nouveau signalement - ${annonceTitle}`;
@@ -248,6 +256,71 @@ export async function sendAdminReportEmail({ report, annonce, reporter }) {
     to: config.adminEmail,
     subject,
     html
+  });
+
+  return { sent: true, messageId: info.messageId };
+}
+
+export async function sendVerificationEmail({ email, pseudo, token }) {
+  const config = getMailConfig();
+  if (!isMailConfigured(config)) {
+    console.warn("[MAIL] Configuration SMTP absente. Email verification non envoye.");
+    return { sent: false };
+  }
+
+  const transporter = createTransporter(config);
+  const verifyUrl = `${getFrontendUrl()}/verification-email?token=${encodeURIComponent(token)}`;
+
+  const info = await transporter.sendMail({
+    from: config.from,
+    to: email,
+    subject: "[DealSpot] Verifiez votre adresse email",
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;padding:20px;border:1px solid #eee;border-radius:10px;">
+        <h2 style="margin:0 0 12px;color:#2e6d99;">Bienvenue sur DealSpot</h2>
+        <p>Bonjour ${pseudo || ""},</p>
+        <p>Veuillez verifier votre adresse email pour activer votre compte.</p>
+        <p style="margin:24px 0;">
+          <a href="${verifyUrl}" style="background:#2f6fd6;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;display:inline-block;">Verifier mon email</a>
+        </p>
+        <p>Si le bouton ne fonctionne pas, copiez ce lien:</p>
+        <p><a href="${verifyUrl}">${verifyUrl}</a></p>
+        <p style="color:#777;font-size:12px;">Ce lien expire dans 24 heures.</p>
+      </div>
+    `
+  });
+
+  return { sent: true, messageId: info.messageId };
+}
+
+export async function sendResetPasswordEmail({ email, pseudo, token }) {
+  const config = getMailConfig();
+  if (!isMailConfigured(config)) {
+    console.warn("[MAIL] Configuration SMTP absente. Email reset password non envoye.");
+    return { sent: false };
+  }
+
+  const transporter = createTransporter(config);
+  const resetUrl = `${getFrontendUrl()}/reinitialiser-mot-de-passe?token=${encodeURIComponent(token)}`;
+
+  const info = await transporter.sendMail({
+    from: config.from,
+    to: email,
+    subject: "[DealSpot] Reinitialisation de votre mot de passe",
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;padding:20px;border:1px solid #eee;border-radius:10px;">
+        <h2 style="margin:0 0 12px;color:#2e6d99;">Reinitialisation du mot de passe</h2>
+        <p>Bonjour ${pseudo || ""},</p>
+        <p>Vous avez demande la reinitialisation de votre mot de passe.</p>
+        <p style="margin:24px 0;">
+          <a href="${resetUrl}" style="background:#2f6fd6;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;display:inline-block;">Reinitialiser mon mot de passe</a>
+        </p>
+        <p>Si vous n'etes pas a l'origine de cette demande, ignorez cet email.</p>
+        <p>Sinon, copiez ce lien:</p>
+        <p><a href="${resetUrl}">${resetUrl}</a></p>
+        <p style="color:#777;font-size:12px;">Ce lien expire dans 1 heure.</p>
+      </div>
+    `
   });
 
   return { sent: true, messageId: info.messageId };
