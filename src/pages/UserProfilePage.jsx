@@ -25,7 +25,7 @@ function resolveImage(value) {
   if (!value) return FALLBACK_IMAGE;
   if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//i.test(value)) {
     const normalizedPath = value.replace(/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/i, "");
-    return API_ORIGIN + normalizedPath;
+    return withNgrokBypass(API_ORIGIN + normalizedPath);
   }
   if (value.startsWith("http") || value.startsWith("data:")) return withNgrokBypass(value);
   return withNgrokBypass(API_ORIGIN + (value.startsWith("/") ? "" : "/") + value);
