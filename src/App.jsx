@@ -4,7 +4,7 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import PrivateHomePage from "./pages/PrivateHomePage";
 import CreateAnnonce from "./pages/CreateAnnonce";
-import { useAuth } from "./context/AuthContext";
+import { useAuth } from "./context/useAuth";
 import ProfilePage from "./pages/ProfilePage";
 import MyAnnoncesPage from "./pages/MyAnnoncesPage";
 import AnnonceDetailPage from "./pages/AnnonceDetailPage";
@@ -15,6 +15,7 @@ import AllAnnoncesPage from "./pages/AllAnnoncesPage";
 import VerifyPage from "./pages/VerifyPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import AProposPage from "./pages/AProposPage";
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -28,6 +29,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
+      <Route path="/apropos" element={<AProposPage />} />
       <Route path="/connexion" element={<LoginPage />} />
       <Route path="/inscription" element={<RegisterPage />} />
       <Route path="/verification-email" element={<VerifyPage />} />

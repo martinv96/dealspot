@@ -3,7 +3,7 @@ import PrivateHeader from "../components/PrivateHeader";
 import PublicHeader from "../components/PublicHeader";
 import SiteFooter from "../components/SiteFooter";
 import ProductGrid from "../components/ProductGrid";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import api from "../services/api";
 
 const PAGE_SIZE = 3;

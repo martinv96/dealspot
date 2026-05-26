@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { FaUserCircle, FaMapMarkerAlt, FaRegCalendarAlt, FaFlag } from "react-icons/fa";
 import PrivateHeader from "../components/PrivateHeader";
 import SiteFooter from "../components/SiteFooter";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import api from "../services/api";
 
 const FALLBACK_IMAGE =

@@ -1,15 +1,10 @@
-import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import { FaBars, FaTimes } from "react-icons/fa";
 import logo from "../assets/logo3.png";
 
 export default function PublicHeader() {
-  const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  useEffect(() => {
-    setIsMenuOpen(false);
-  }, [location.pathname]);
 
   return (
     <header className="topbar">

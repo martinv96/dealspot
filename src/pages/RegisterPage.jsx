@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import PublicHeader from "../components/PublicHeader";
 import SiteFooter from "../components/SiteFooter";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { validateRegisterForm } from "../utils/validation";
 
 export default function RegisterPage() {

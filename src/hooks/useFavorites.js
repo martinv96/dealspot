@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { useAuth } from "../context/AuthContext";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useAuth } from "../context/useAuth";
 import api from "../services/api";
 
 function normalizeFavorite(item) {
@@ -20,26 +20,42 @@ export function useFavorites() {
   const { isAuthenticated } = useAuth();
   const [favorites, setFavorites] = useState([]);
 
-  const loadFavorites = useCallback(async () => {
+  useEffect(() => {
     if (!isAuthenticated) {
-      setFavorites([]);
-      return;
+      return undefined;
     }
 
-    const { data } = await api.get("/favorites");
-    const next = (data?.favorites || []).map(normalizeFavorite).filter(Boolean);
-    setFavorites(next);
+    let cancelled = false;
+
+    async function fetchFavorites() {
+      try {
+        const { data } = await api.get("/favorites");
+        const next = (data?.favorites || []).map(normalizeFavorite).filter(Boolean);
+        if (!cancelled) {
+          setFavorites(next);
+        }
+      } catch {
+        if (!cancelled) {
+          setFavorites([]);
+        }
+      }
+    }
+
+    fetchFavorites();
+
+    return () => {
+      cancelled = true;
+    };
   }, [isAuthenticated]);
 
-  useEffect(() => {
-    loadFavorites().catch(() => {
-      setFavorites([]);
-    });
-  }, [loadFavorites]);
+  const visibleFavorites = useMemo(
+    () => (isAuthenticated ? favorites : []),
+    [isAuthenticated, favorites]
+  );
 
   const isFavorite = useCallback(
-    (id) => favorites.some((f) => f.id === id),
-    [favorites]
+    (id) => visibleFavorites.some((f) => f.id === id),
+    [visibleFavorites]
   );
 
   const toggleFavorite = useCallback(
@@ -49,7 +65,7 @@ export function useFavorites() {
       }
 
       const fallbackItem = normalizeFavorite(annonce);
-      const previous = favorites;
+      const previous = visibleFavorites;
       const exists = previous.some((f) => f.id === annonce.id);
 
       if (exists) {
@@ -79,7 +95,7 @@ export function useFavorites() {
         setFavorites(previous);
       }
     },
-    [favorites, isAuthenticated]
+    [visibleFavorites, isAuthenticated]
   );
 
   const removeFavorite = useCallback(
@@ -88,7 +104,7 @@ export function useFavorites() {
         return;
       }
 
-      const previous = favorites;
+      const previous = visibleFavorites;
       setFavorites((prev) => prev.filter((f) => f.id !== id));
 
       try {
@@ -97,8 +113,13 @@ export function useFavorites() {
         setFavorites(previous);
       }
     },
-    [favorites, isAuthenticated]
+    [visibleFavorites, isAuthenticated]
   );
 
-  return { favorites, isFavorite, toggleFavorite, removeFavorite };
+  return {
+    favorites: visibleFavorites,
+    isFavorite,
+    toggleFavorite,
+    removeFavorite
+  };
 }

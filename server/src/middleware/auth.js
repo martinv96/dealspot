@@ -16,7 +16,7 @@ export function authMiddleware(req, res, next) {
       id: payload.id || payload.userId
     };
     next();
-  } catch (error) {
+  } catch {
     return res.status(401).json({ message: "Token invalide." });
   }
 }

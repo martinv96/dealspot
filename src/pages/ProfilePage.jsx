@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { FaUserCircle, FaPen, FaClock, FaCheckCircle } from "react-icons/fa";
 import PrivateHeader from "../components/PrivateHeader";
 import SiteFooter from "../components/SiteFooter";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 
 function formatMemberSince(dateValue) {
   if (!dateValue) return "Membre depuis date inconnue";

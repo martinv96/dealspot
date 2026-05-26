@@ -25,8 +25,6 @@
 - Validation client + toast success/error
 - Fichiers: `Report.js`, `report.routes.js`, `report.controller.js`, `AnnonceDetailPage.jsx`, `.env`
 
-
-
 ### 3. Pagination API (2h)
 
 **Backend:**
@@ -50,8 +48,6 @@
 
 ---
 
-
-
 ## 🟠 PHASE 2 — Solidifier l'app
 
 ### 5. Favoris en base (1h)
@@ -61,8 +57,6 @@
 - Routes: `POST /api/favorites`, `GET /api/favorites`, `DELETE /api/favorites/:id`
 - Refactor hook `useFavorites.js` pour appels API
 - UI identique, même comportement (optimistic update)
-
-
 
 ### 6. Validation complète (2-3h)
 
@@ -116,7 +110,7 @@ Contexte actuel validé:
 
 - Ajouter MongoDB + Mongoose côté serveur
 - Créer collection `contact_messages`
-	- Champs: `email`, `sujet`, `message`, `categorie`, `status`, `createdAt`, `meta`
+- Champs: `email`, `sujet`, `message`, `categorie`, `status`, `createdAt`, `meta`
 - API: `POST /api/contact` (public) + `GET /api/contact` (admin)
 - Créer une page frontend Contact (nouvelle route)
 - Ne rien modifier à la messagerie SQL existante
@@ -125,8 +119,8 @@ Contexte actuel validé:
 
 - Garder les endpoints actuels inchangés (`/api/messages/...`)
 - Introduire une couche `message.repository` avec 2 implémentations:
-	- SQLRepository (existant)
-	- MongoRepository (nouvelle)
+- SQLRepository (existant)
+- MongoRepository (nouvelle)
 - Activer un mode progressif via env (ex: `MESSAGE_STORE=sql|mongo|dual`)
 - En mode `dual`: écriture SQL + Mongo, lecture SQL (sécurisé), puis bascule de lecture Mongo après validation
 

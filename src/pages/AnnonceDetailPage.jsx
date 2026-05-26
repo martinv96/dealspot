@@ -18,7 +18,7 @@ import "leaflet/dist/leaflet.css";
 import PublicHeader from "../components/PublicHeader";
 import PrivateHeader from "../components/PrivateHeader";
 import SiteFooter from "../components/SiteFooter";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { useFavorites } from "../hooks/useFavorites";
 import api from "../services/api";
 

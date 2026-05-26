@@ -1,7 +1,19 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import api from "../services/api";
+import { AuthContext } from "./auth-context";
 
-const AuthContext = createContext(null);
+function isExpiredJwt(token) {
+  const parts = String(token || "").split(".");
+  if (parts.length !== 3) return true;
+
+  try {
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+    if (!payload.exp) return false;
+    return Date.now() >= payload.exp * 1000;
+  } catch {
+    return true;
+  }
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -19,7 +31,8 @@ export function AuthProvider({ children }) {
     async function bootstrap() {
       const token = localStorage.getItem("dealspot_token");
 
-      if (!token) {
+      if (!token || isExpiredJwt(token)) {
+        localStorage.removeItem("dealspot_token");
         setLoading(false);
         return;
       }
@@ -79,14 +92,4 @@ export function AuthProvider({ children }) {
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-
-  if (!ctx) {
-    throw new Error("useAuth doit être utilisé dans AuthProvider.");
-  }
-
-  return ctx;
 }

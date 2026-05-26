@@ -1,5 +1,6 @@
 import { FaPercent } from "react-icons/fa";
 import logo from "../assets/logo3.png";
+import { Link } from "react-router-dom";
 
 export default function SiteFooter() {
   return (
@@ -22,8 +23,8 @@ export default function SiteFooter() {
         <div>
           <h4>Liens rapide</h4>
           <ul>
-            <li>Accueil</li>
-            <li>A propos</li>
+            <Link to="/">Accueil</Link>
+            <Link to="/apropos">A propos</Link>
             <li>Aide</li>
           </ul>
         </div>

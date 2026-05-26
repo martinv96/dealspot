@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { FaPaperPlane, FaRegCommentDots, FaTimes, FaUserCircle } from "react-icons/fa";
 import PrivateHeader from "../components/PrivateHeader";
 import SiteFooter from "../components/SiteFooter";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import api from "../services/api";
 
 function formatTime(dateValue) {
@@ -40,13 +40,19 @@ export default function MessagesPage() {
 
   const pollRef = useRef(null);
   const endRef = useRef(null);
+  const previousThreadLengthRef = useRef(0);
+  const selectedRef = useRef(null);
+
+  useEffect(() => {
+    selectedRef.current = selected;
+  }, [selected]);
 
   const selectedKey = useMemo(() => {
     if (!selected) return "";
     return `${selected.otherUser.id}-${selected.annonceId || 0}`;
   }, [selected]);
 
-  async function loadConversations(keepSelection = true) {
+  const loadConversations = useCallback(async (keepSelection = true) => {
     const res = await api.get("/messages/conversations");
     const nextList = res.data?.conversations || [];
     setConversations(nextList);
@@ -54,7 +60,7 @@ export default function MessagesPage() {
     const fromQueryUser = Number.parseInt(searchParams.get("userId") || "", 10);
     const fromQueryAnnonce = Number.parseInt(searchParams.get("annonceId") || "", 10);
 
-    if (fromQueryUser && (!selected || !keepSelection)) {
+    if (fromQueryUser && (!selectedKey || !keepSelection)) {
       const existing = nextList.find(
         (c) => c.otherUser?.id === fromQueryUser && (c.annonceId || 0) === (fromQueryAnnonce || 0)
       );
@@ -76,7 +82,7 @@ export default function MessagesPage() {
       return;
     }
 
-    if (!keepSelection || !selected) {
+    if (!keepSelection || !selectedKey) {
       setSelected(nextList[0] || null);
       return;
     }
@@ -84,12 +90,12 @@ export default function MessagesPage() {
     const selectedStillExists = nextList.find(
       (c) => `${c.otherUser?.id}-${c.annonceId || 0}` === selectedKey
     );
-    if (selectedStillExists) {
-      setSelected(selectedStillExists);
+    if (!selectedStillExists) {
+      setSelected(nextList[0] || null);
     }
-  }
+  }, [searchParams, selectedKey]);
 
-  async function loadThread(current, options = {}) {
+  const loadThread = useCallback(async (current, options = {}) => {
     const { silent = false } = options;
 
     if (!current?.otherUser?.id) {
@@ -122,7 +128,7 @@ export default function MessagesPage() {
         setLoadingThread(false);
       }
     }
-  }
+  }, []);
 
   useEffect(() => {
     async function init() {
@@ -137,32 +143,37 @@ export default function MessagesPage() {
       }
     }
     init();
-  }, []);
+  }, [loadConversations]);
 
   useEffect(() => {
-    if (!selected) {
+    const currentSelected = selectedRef.current;
+
+    if (!currentSelected) {
       setThread([]);
       return;
     }
-    loadThread(selected);
+    loadThread(currentSelected);
 
     if (pollRef.current) {
       clearInterval(pollRef.current);
     }
 
     pollRef.current = setInterval(() => {
-      loadThread(selected, { silent: true });
+      loadThread(selectedRef.current, { silent: true });
       loadConversations(true);
     }, 4500);
 
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, [selectedKey]);
+  }, [loadConversations, loadThread, selectedKey]);
 
   useEffect(() => {
-    if (endRef.current) {
-      endRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+    const previousLength = previousThreadLengthRef.current;
+    previousThreadLengthRef.current = thread.length;
+
+    if (thread.length > previousLength && endRef.current) {
+      endRef.current.scrollIntoView({ behavior: "auto", block: "end" });
     }
   }, [thread.length]);
 
@@ -246,9 +257,11 @@ export default function MessagesPage() {
                   const key = `${conv.otherUser.id}-${conv.annonceId || 0}`;
                   const isActive = key === selectedKey;
                   return (
-                    <button
+                    <div
                       key={key}
                       className={`messages-conversation-item${isActive ? " active" : ""}`}
+                      role="button"
+                      tabIndex={0}
                       onClick={() => {
                         setSelected(conv);
                         setConversations((prev) =>
@@ -258,6 +271,19 @@ export default function MessagesPage() {
                           })
                         );
                         setSearchParams({});
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setSelected(conv);
+                          setConversations((prev) =>
+                            prev.map((item) => {
+                              const itemKey = `${item.otherUser.id}-${item.annonceId || 0}`;
+                              return itemKey === key ? { ...item, unreadCount: 0 } : item;
+                            })
+                          );
+                          setSearchParams({});
+                        }
                       }}
                     >
                       <div className="messages-conversation-avatar"><FaUserCircle /></div>
@@ -282,7 +308,7 @@ export default function MessagesPage() {
                           <FaTimes />
                         </button>
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>

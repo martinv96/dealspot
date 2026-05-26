@@ -12,7 +12,7 @@ import {
   FaTimes
 } from "react-icons/fa";
 import logo from "../assets/logo3.png";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { useFavorites } from "../hooks/useFavorites";
 import api from "../services/api";
 
@@ -22,13 +22,10 @@ export default function PrivateHeader() {
   const location = useLocation();
   const { favorites } = useFavorites();
   const [unreadMessages, setUnreadMessages] = useState(0);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [menuOpenPath, setMenuOpenPath] = useState("");
   const isOnMessagesPage = location.pathname.startsWith("/messages");
   const visibleUnreadMessages = isOnMessagesPage ? 0 : unreadMessages;
-
-  useEffect(() => {
-    setIsMenuOpen(false);
-  }, [location.pathname]);
+  const isMenuOpen = menuOpenPath === location.pathname;
 
   useEffect(() => {
     let cancelled = false;
@@ -63,8 +60,18 @@ export default function PrivateHeader() {
     };
   }, [isOnMessagesPage]);
 
+  function toggleMenu() {
+    setMenuOpenPath((currentPath) =>
+      currentPath === location.pathname ? "" : location.pathname
+    );
+  }
+
+  function closeMenu() {
+    setMenuOpenPath("");
+  }
+
   function handleLogout() {
-    setIsMenuOpen(false);
+    closeMenu();
     logout();
     navigate("/connexion");
   }
@@ -80,7 +87,7 @@ export default function PrivateHeader() {
         <button
           type="button"
           className="topbar-menu-toggle"
-          onClick={() => setIsMenuOpen((prev) => !prev)}
+          onClick={toggleMenu}
           aria-label={isMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
           aria-expanded={isMenuOpen}
         >
@@ -89,18 +96,18 @@ export default function PrivateHeader() {
       </div>
 
       <nav className={`nav nav-private${isMenuOpen ? " open" : ""}`}>
-        <Link to="/app" className="nav-link" onClick={() => setIsMenuOpen(false)}><FaHome /> Accueil</Link>
-        <Link to="/mes-annonces" className="nav-link" onClick={() => setIsMenuOpen(false)}><FaRegFileAlt /> Mes annonces</Link>
-        <Link to="/creer-annonce" className="nav-link" onClick={() => setIsMenuOpen(false)}><FaRegFileAlt /> Créer une annonce</Link>
-        <Link to="/favoris" className="nav-link nav-favoris" onClick={() => setIsMenuOpen(false)}>
+        <Link to="/app" className="nav-link" onClick={closeMenu}><FaHome /> Accueil</Link>
+        <Link to="/mes-annonces" className="nav-link" onClick={closeMenu}><FaRegFileAlt /> Mes annonces</Link>
+        <Link to="/creer-annonce" className="nav-link" onClick={closeMenu}><FaRegFileAlt /> Créer une annonce</Link>
+        <Link to="/favoris" className="nav-link nav-favoris" onClick={closeMenu}>
           {favorites.length > 0 ? <FaHeart className="nav-heart-active" /> : <FaRegHeart />}
           Favoris
         </Link>
-        <Link to="/messages" className="nav-link" onClick={() => setIsMenuOpen(false)}>
+        <Link to="/messages" className="nav-link" onClick={closeMenu}>
           <FaRegCommentDots /> Messages
           {visibleUnreadMessages > 0 && <span className="nav-badge">{visibleUnreadMessages}</span>}
         </Link>
-        <Link to="/profil" className="nav-link" onClick={() => setIsMenuOpen(false)}><FaUser /> Profil</Link>
+        <Link to="/profil" className="nav-link" onClick={closeMenu}><FaUser /> Profil</Link>
         <button onClick={handleLogout} className="nav-link nav-logout" type="button">
           <FaSignOutAlt /> Deconnexion
         </button>
