@@ -16,6 +16,7 @@ import VerifyPage from "./pages/VerifyPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import AProposPage from "./pages/AProposPage";
+import ContactPage from "./pages/ContactPage";
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -31,6 +32,7 @@ export default function App() {
       <Route path="/" element={<HomePage />} />
       <Route path="/apropos" element={<AProposPage />} />
       <Route path="/connexion" element={<LoginPage />} />
+      <Route path="/contact" element={<ContactPage/>} />
       <Route path="/inscription" element={<RegisterPage />} />
       <Route path="/verification-email" element={<VerifyPage />} />
       <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />

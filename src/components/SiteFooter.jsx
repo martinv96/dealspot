@@ -25,6 +25,7 @@ export default function SiteFooter() {
           <ul>
             <Link to="/">Accueil</Link>
             <Link to="/apropos">A propos</Link>
+            <Link to="/contact">Contactez-nous</Link>
             <li>Aide</li>
           </ul>
         </div>
