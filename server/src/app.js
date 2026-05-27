@@ -10,11 +10,14 @@ import messageRoutes from "./routes/message.routes.js";
 import reportRoutes from "./routes/report.routes.js";
 import favoriteRoutes from "./routes/favorite.routes.js";
 import "./models/index.js";
+import connectMongo from './config/mongo.js';
+import contactRoutes from './routes/contact.routes.js';
 
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const uploadsDir = path.resolve(__dirname, "../uploads");
+
 
 const configuredOrigins = (process.env.CORS_ORIGINS || "")
   .split(",")
@@ -67,6 +70,7 @@ app.use("/api/annonces", annonceRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/favorites", favoriteRoutes);
+app.use('/api/contact', contactRoutes);
 
 app.use((error, _req, res, next) => {
   if (!error) {
@@ -91,6 +95,7 @@ async function start() {
   try {
     await sequelize.authenticate();
     await sequelize.sync();
+    await connectMongo();
     app.listen(PORT, () => {
       console.log("API DealSpot démarrée sur le port " + PORT);
     });
