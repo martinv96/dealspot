@@ -1,14 +1,59 @@
 import nodemailer from "nodemailer";
 
+function parseMailerDsn(rawDsn) {
+  const dsn = String(rawDsn || "").trim();
+  if (!dsn) return null;
+
+  try {
+    const url = new URL(dsn);
+    const protocol = (url.protocol || "").replace(":", "").toLowerCase();
+    if (protocol !== "smtp" && protocol !== "smtps") {
+      return null;
+    }
+
+    const host = url.hostname;
+    const port = url.port ? Number(url.port) : protocol === "smtps" ? 465 : 587;
+    const user = decodeURIComponent(url.username || "");
+    const pass = decodeURIComponent(url.password || "");
+
+    if (!host || !port || !user || !pass) {
+      return null;
+    }
+
+    return {
+      host,
+      port,
+      user,
+      pass,
+      secure: protocol === "smtps" || port === 465
+    };
+  } catch {
+    return null;
+  }
+}
+
 function getMailConfig() {
+  const dsnConfig = parseMailerDsn(process.env.MAILER_DSN);
   const host = process.env.SMTP_HOST;
   const port = Number(process.env.SMTP_PORT || 587);
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
   const adminEmail = process.env.ADMIN_EMAIL;
-  const from = process.env.MAIL_FROM || user;
+  const from = process.env.MAILER_FROM || process.env.MAIL_FROM || dsnConfig?.user || user;
 
-  return { host, port, user, pass, adminEmail, from };
+  if (dsnConfig) {
+    return {
+      host: dsnConfig.host,
+      port: dsnConfig.port,
+      user: dsnConfig.user,
+      pass: dsnConfig.pass,
+      secure: dsnConfig.secure,
+      adminEmail,
+      from
+    };
+  }
+
+  return { host, port, user, pass, secure: port === 465, adminEmail, from };
 }
 
 function isMailConfigured(config) {
@@ -19,7 +64,7 @@ function createTransporter(config) {
   return nodemailer.createTransport({
     host: config.host,
     port: config.port,
-    secure: config.port === 465,
+    secure: Boolean(config.secure),
     auth: {
       user: config.user,
       pass: config.pass
