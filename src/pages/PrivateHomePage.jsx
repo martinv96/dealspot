@@ -96,14 +96,14 @@ export default function PrivateHomePage() {
 
       <main className="page-main private-home-main">
         <section className="hero hero-private">
-          <h1>Bonjour {user?.pseudo || "Martin"} !</h1>
+          <h1>Bonjour {user?.pseudo || "Mystérieux inconnu"} !</h1>
           <p>Découvrez les annonces du site près de chez vous</p>
         </section>
 
         <section className="section listings-section">
           <div className="section-head">
             <h2>Mes annonces en 1 clic</h2>
-            <Link to="/mes-annonces" className="btn btn-outline">Voir tout</Link>
+            <Link to="/mes-annonces" className="btn btn-outline">Toutes mes annonces</Link>
           </div>
           {isLoading ? <p className="center-loader">Chargement des annonces...</p> : null}
           {!isLoading && error ? <p className="form-error">{error}</p> : null}
