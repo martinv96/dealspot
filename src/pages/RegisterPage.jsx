@@ -13,6 +13,7 @@ export default function RegisterPage() {
     pseudo: "",
     email: "",
     localisation: "",
+    role: "acheteur",
     password: "",
     confirmPassword: ""
   });
@@ -38,6 +39,7 @@ export default function RegisterPage() {
         pseudo: form.pseudo,
         email: form.email,
         localisation: form.localisation,
+        role: form.role,
         password: form.password
       });
 
@@ -101,6 +103,19 @@ export default function RegisterPage() {
                 onChange={handleChange}
                 placeholder="Ex: Paris 12eme"
               />
+            </div>
+
+            <div>
+              <label>Je suis un</label>
+              <select
+                name="role"
+                value={form.role}
+                onChange={handleChange}
+                required
+              >
+                <option value="acheteur">Acheteur</option>
+                <option value="vendeur">Vendeur</option>
+              </select>
             </div>
 
             <div>

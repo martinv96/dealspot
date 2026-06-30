@@ -120,7 +120,7 @@ export async function getUserPublicProfile(req, res) {
 
 export async function register(req, res) {
   try {
-    const { pseudo, email, password, localisation } = req.validatedBody || req.body;
+    const { pseudo, email, password, localisation, role } = req.validatedBody || req.body;
 
     if (!isPasswordSecure(password)) {
       return res.status(400).json({
@@ -135,12 +135,17 @@ export async function register(req, res) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    let finalRole = "acheteur";
+    if (role === "vendeur") {
+      finalRole = "vendeur";
+    }
+
     const user = await User.create({
       pseudo,
       email,
       mot_de_passe: hashedPassword,
       localisation: localisation || null,
-      role: "acheteur"
+      role: finalRole
     });
 
     await ensureUserSecurity(user.id, { email_verified: false });

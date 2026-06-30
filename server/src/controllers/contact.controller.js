@@ -1,5 +1,5 @@
 
-import ContactMessage from '../models/ContactMessage.js';
+import ContactMessage from '../models/contactMessage.js';
 
 export const createContactMessage = async (req, res) => {
   try {

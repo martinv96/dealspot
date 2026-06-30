@@ -21,5 +21,14 @@ If you are developing a production application, we recommend using TypeScript wi
     npm run dev : depuis la racine
 
 2. Démarrer le server:
+    à la maison, ne pas oublier de lancer xampp
     se placer dans le dossier server: cd server
     npm run dev: depuis le dossier server
+
+3. Pour utiliser ngrok:
+    ngrok http 4000
+    on récupère l'url et on ajoute /api a la fin
+    exemple: http://localhost:4000/api
+    puis on ajoute le lien dans vercel (varaible VITE_API_URL)
+    on redeploie le projet
+    pour charger les images, cliquer sur une image et cliquer sur visiter le site
