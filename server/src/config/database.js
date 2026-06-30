@@ -16,8 +16,24 @@ if (useSsl) {
   };
 }
 
-export const sequelize = process.env.DATABASE_URL
-  ? new Sequelize(process.env.DATABASE_URL, commonOptions)
+// 1. Priorité absolue : Si Railway fournit l'URL complète avec MYSQL_URL
+export const sequelize = process.env.MYSQL_URL
+  ? new Sequelize(process.env.MYSQL_URL, commonOptions)
+  
+  // 2. Option Railway par variables séparées (les 9 variables qu'on a ajoutées)
+  : process.env.MYSQLHOST
+  ? new Sequelize(
+      process.env.MYSQLDATABASE,
+      process.env.MYSQLUSER,
+      process.env.MYSQLPASSWORD,
+      {
+        ...commonOptions,
+        host: process.env.MYSQLHOST,
+        port: Number(process.env.MYSQLPORT || 3306)
+      }
+    )
+    
+  // 3. Fallback : Ton environnement de développement local classique
   : new Sequelize(
       process.env.DB_NAME || "dealspot",
       process.env.DB_USER || "root",
