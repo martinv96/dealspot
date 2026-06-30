@@ -148,7 +148,7 @@ export async function register(req, res) {
       role: finalRole
     });
 
-    await ensureUserSecurity(user.id, { email_verified: false });
+    await ensureUserSecurity(user.id, { email_verified: true });
 
     try {
       const verifyToken = await issueAuthToken(user.id, "verify_email", 24 * 60 * 60 * 1000);
