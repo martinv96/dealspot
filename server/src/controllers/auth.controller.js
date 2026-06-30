@@ -152,13 +152,19 @@ export async function register(req, res) {
 
     try {
       const verifyToken = await issueAuthToken(user.id, "verify_email", 24 * 60 * 60 * 1000);
-      await sendVerificationEmail({
-        email: user.email,
-        pseudo: user.pseudo,
-        token: verifyToken
-      });
+      
+      // si l'envoi prend plus de 4 secondes, erreur
+      await Promise.race([
+        sendVerificationEmail({
+          email: user.email,
+          pseudo: user.pseudo,
+          token: verifyToken
+        }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout SMTP")), 4000))
+      ]);
+
     } catch (mailError) {
-      console.error("Erreur envoi email verification:", mailError.message);
+      console.error("⚠️ [MAIL ERROR] Échec de l'envoi mais inscription validée :", mailError.message);
     }
 
     return res.status(201).json({
@@ -251,11 +257,14 @@ export async function forgotPassword(req, res) {
     if (user) {
       try {
         const resetToken = await issueAuthToken(user.id, "reset_password", 60 * 60 * 1000);
-        await sendResetPasswordEmail({
-          email: user.email,
-          pseudo: user.pseudo,
-          token: resetToken
-        });
+        await Promise.race([
+          sendResetPasswordEmail({
+            email: user.email,
+            pseudo: user.pseudo,
+            token: resetToken
+          }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout SMTP")), 4000))
+        ]);
       } catch (mailError) {
         console.error("Erreur envoi email reset password:", mailError.message);
       }
