@@ -178,6 +178,18 @@ export default function MessagesPage() {
       setThread([]);
       return;
     }
+
+    const isDraftWithoutMessages = Boolean(
+      currentSelected.isDraftConversation && thread.length === 0
+    );
+
+    if (isDraftWithoutMessages) {
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+      }
+      return;
+    }
+
     loadThread(currentSelected);
 
     if (pollRef.current) {
@@ -192,7 +204,7 @@ export default function MessagesPage() {
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, [loadConversations, loadThread, selectedKey]);
+  }, [loadConversations, loadThread, selectedKey, thread.length]);
 
   useEffect(() => {
     const previousLength = previousThreadLengthRef.current;
