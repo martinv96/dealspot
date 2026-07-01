@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import jwt from "jsonwebtoken";
-import { authMiddleware } from "../../src/middleware/auth.js";
+import db from "../../src/models/index.js";
+import { authMiddleware, adminMiddleware } from "../../src/middleware/auth.js";
 
 function createRes() {
   return {
@@ -67,4 +68,60 @@ test("authMiddleware ajoute req.user quand token valide", () => {
   assert.equal(called, true);
   assert.equal(req.user.id, 42);
   assert.equal(req.user.email, "martin@example.com");
+});
+
+test("adminMiddleware refuse si req.user absent", async () => {
+  const req = {};
+  const res = createRes();
+  let called = false;
+
+  await adminMiddleware(req, res, () => {
+    called = true;
+  });
+
+  assert.equal(called, false);
+  assert.equal(res.statusCode, 401);
+  assert.equal(res.body.message, "Token invalide.");
+});
+
+test("adminMiddleware appelle next si role admin en BDD", async () => {
+  const originalFindByPk = db.User.findByPk;
+  db.User.findByPk = async () => ({ id: 42, role: "admin" });
+
+  const req = { user: { id: 42, role: "acheteur" } };
+  const res = createRes();
+  let called = false;
+
+  try {
+    await adminMiddleware(req, res, () => {
+      called = true;
+    });
+  } finally {
+    db.User.findByPk = originalFindByPk;
+  }
+
+  assert.equal(called, true);
+  assert.equal(req.user.role, "admin");
+  assert.equal(res.statusCode, 200);
+});
+
+test("adminMiddleware refuse si role non admin en BDD", async () => {
+  const originalFindByPk = db.User.findByPk;
+  db.User.findByPk = async () => ({ id: 42, role: "vendeur" });
+
+  const req = { user: { id: 42, role: "admin" } };
+  const res = createRes();
+  let called = false;
+
+  try {
+    await adminMiddleware(req, res, () => {
+      called = true;
+    });
+  } finally {
+    db.User.findByPk = originalFindByPk;
+  }
+
+  assert.equal(called, false);
+  assert.equal(res.statusCode, 403);
+  assert.equal(res.body.message, "Accès administrateur requis.");
 });

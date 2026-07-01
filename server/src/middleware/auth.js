@@ -1,4 +1,7 @@
 import jwt from "jsonwebtoken";
+import db from "../models/index.js";
+
+const User = db.User;
 
 export function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -18,6 +21,27 @@ export function authMiddleware(req, res, next) {
     next();
   } catch {
     return res.status(401).json({ message: "Token invalide." });
+  }
+}
+
+export async function adminMiddleware(req, res, next) {
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: "Token invalide." });
+    }
+
+    const user = await User.findByPk(req.user.id, {
+      attributes: ["id", "role"]
+    });
+
+    if (!user || user.role !== "admin") {
+      return res.status(403).json({ message: "Accès administrateur requis." });
+    }
+
+    req.user.role = user.role;
+    return next();
+  } catch {
+    return res.status(500).json({ message: "Erreur serveur." });
   }
 }
 

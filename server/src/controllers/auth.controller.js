@@ -15,6 +15,8 @@ function isPasswordSecure(password) {
 }
 
 function userDto(user) {
+  const security = user?.security || null;
+
   return {
     id: user.id,
     pseudo: user.pseudo,
@@ -22,7 +24,9 @@ function userDto(user) {
     telephone: user.telephone,
     role: user.role,
     localisation: user.localisation,
-    date_inscription: user.date_inscription
+    date_inscription: user.date_inscription,
+    is_blocked: security?.is_blocked ?? false,
+    blocked_reason: security?.blocked_reason || null
   };
 }
 
@@ -198,6 +202,12 @@ export async function login(req, res) {
       });
     }
 
+    if (security?.is_blocked) {
+      return res.status(403).json({
+        message: security.blocked_reason || "Votre compte a été bloqué par un administrateur."
+      });
+    }
+
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role, pseudo: user.pseudo },
       process.env.JWT_SECRET,
@@ -314,10 +324,24 @@ export async function resetPassword(req, res) {
 
 export async function me(req, res) {
   try {
-    const user = await User.findByPk(req.user.id);
+    const user = await User.findByPk(req.user.id, {
+      include: [
+        {
+          model: UserSecurity,
+          as: "security",
+          attributes: ["is_blocked", "blocked_reason"]
+        }
+      ]
+    });
 
     if (!user) {
       return res.status(404).json({ message: "Utilisateur introuvable." });
+    }
+
+    if (user.security?.is_blocked) {
+      return res.status(403).json({
+        message: user.security.blocked_reason || "Votre compte a été bloqué par un administrateur."
+      });
     }
 
     return res.json({ user: userDto(user) });

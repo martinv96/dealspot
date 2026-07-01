@@ -18,6 +18,7 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import AProposPage from "./pages/AProposPage";
 import ContactPage from "./pages/ContactPage";
+import AdminPage from "./pages/AdminPage";
 
 const DEFAULT_SEO = {
   title: "DealSpot - Petites annonces locales",
@@ -88,6 +89,7 @@ function getSeoConfig(pathname) {
     pathname === "/mot-de-passe-oublie" ||
     pathname === "/reinitialiser-mot-de-passe" ||
     pathname === "/app" ||
+    pathname === "/admin" ||
     pathname === "/profil" ||
     pathname === "/messages" ||
     pathname === "/favoris" ||
@@ -156,6 +158,15 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
+function AdminRoute({ children }) {
+  const { isAuthenticated, loading, user } = useAuth();
+
+  if (loading) return <div className="center-loader">Chargement en cours...</div>;
+  if (!isAuthenticated) return <Navigate to="/connexion" replace />;
+  if (user?.role !== "admin") return <Navigate to="/app" replace />;
+  return children;
+}
+
 export default function App() {
   return (
     <>
@@ -219,6 +230,14 @@ export default function App() {
             <ProtectedRoute>
               <PrivateHomePage />
             </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <AdminPage />
+            </AdminRoute>
           }
         />
       </Routes>

@@ -7,6 +7,7 @@ import {
   FaHeart,
   FaRegCommentDots,
   FaUser,
+  FaUserShield,
   FaSignOutAlt,
   FaBars,
   FaTimes
@@ -17,7 +18,7 @@ import { useFavorites } from "../hooks/useFavorites";
 import api from "../services/api";
 
 export default function PrivateHeader() {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { favorites } = useFavorites();
@@ -108,6 +109,9 @@ export default function PrivateHeader() {
           {visibleUnreadMessages > 0 && <span className="nav-badge">{visibleUnreadMessages}</span>}
         </Link>
         <Link to="/profil" className="nav-link" onClick={closeMenu}><FaUser /> Profil</Link>
+        {user?.role === "admin" ? (
+          <Link to="/admin" className="nav-link" onClick={closeMenu}><FaUserShield /> Administrateur</Link>
+        ) : null}
         <button onClick={handleLogout} className="nav-link nav-logout" type="button">
           <FaSignOutAlt /> Deconnexion
         </button>

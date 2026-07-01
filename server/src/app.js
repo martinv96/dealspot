@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import { DataTypes } from "sequelize";
 import path from "path";
 import { fileURLToPath } from "url";
 import "./config/env.js";
@@ -9,6 +10,7 @@ import annonceRoutes from "./routes/annonce.routes.js";
 import messageRoutes from "./routes/message.routes.js";
 import reportRoutes from "./routes/report.routes.js";
 import favoriteRoutes from "./routes/favorite.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
 import "./models/index.js";
 import connectMongo from './config/mongo.js';
 import contactRoutes from './routes/contact.routes.js';
@@ -71,6 +73,7 @@ app.use("/api/messages", messageRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/favorites", favoriteRoutes);
 app.use('/api/contact', contactRoutes);
+app.use("/api/admin", adminRoutes);
 
 app.use((error, _req, res, next) => {
   if (!error) {
@@ -91,10 +94,38 @@ app.use((error, _req, res, next) => {
 
 const PORT = Number(process.env.PORT) || 4000;
 
+async function ensureUserSecurityAdminColumns() {
+  const queryInterface = sequelize.getQueryInterface();
+  const tableDefinition = await queryInterface.describeTable("user_security");
+
+  if (!tableDefinition.is_blocked) {
+    await queryInterface.addColumn("user_security", "is_blocked", {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false
+    });
+  }
+
+  if (!tableDefinition.blocked_at) {
+    await queryInterface.addColumn("user_security", "blocked_at", {
+      type: DataTypes.DATE,
+      allowNull: true
+    });
+  }
+
+  if (!tableDefinition.blocked_reason) {
+    await queryInterface.addColumn("user_security", "blocked_reason", {
+      type: DataTypes.STRING(255),
+      allowNull: true
+    });
+  }
+}
+
 async function start() {
   try {
     await sequelize.authenticate();
     await sequelize.sync();
+    await ensureUserSecurityAdminColumns();
     await connectMongo();
     app.listen(PORT, () => {
       console.log("API DealSpot démarrée sur le port " + PORT);

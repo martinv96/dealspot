@@ -26,6 +26,19 @@ export default (sequelize) => {
       email_verified_at: {
         type: DataTypes.DATE,
         allowNull: true
+      },
+      is_blocked: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
+      },
+      blocked_at: {
+        type: DataTypes.DATE,
+        allowNull: true
+      },
+      blocked_reason: {
+        type: DataTypes.STRING(255),
+        allowNull: true
       }
     },
     {
