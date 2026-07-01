@@ -1,6 +1,7 @@
 import db from "../models/index.js";
 import jwt from "jsonwebtoken";
 import { Op } from "sequelize";
+import { deleteImagesByUrls, uploadImages } from "../services/cloudinary.service.js";
 const Annonce = db.Annonce;
 const User = db.User;
 
@@ -77,12 +78,12 @@ function serializeAnnonce(annonce) {
   };
 }
 
-function getUploadedImageUrls(req) {
+async function getUploadedImageUrls(req) {
   if (!Array.isArray(req.files) || req.files.length === 0) {
     return [];
   }
 
-  return req.files.map((file) => "/uploads/" + file.filename).slice(0, 5);
+  return uploadImages(req.files, { folder: "dealspot/annonces" });
 }
 
 function getAuthenticatedUserIdFromHeader(req) {
@@ -107,7 +108,7 @@ export const createAnnonce = async (req, res) => {
     // L'id de l'utilisateur viendra normalement du middleware auth (req.user.id)
     const userId = req.user.id; 
 
-    const uploadedImages = getUploadedImageUrls(req);
+    const uploadedImages = await getUploadedImageUrls(req);
 
     const nouvelleAnnonce = await Annonce.create({
       titre,
@@ -262,6 +263,7 @@ export const deleteMyAnnonce = async (req, res) => {
       return res.status(403).json({ message: "Suppression non autorisée." });
     }
 
+    await deleteImagesByUrls(normalizeImages(annonce.images));
     await annonce.destroy();
     return res.json({ message: "Annonce supprimée avec succès." });
   } catch (error) {
@@ -292,7 +294,8 @@ export const updateMyAnnonce = async (req, res) => {
 
     // On récupère 'existingImages' depuis le body (envoyé par le front)
     const { titre, description, prix, categorie, localisation, statut, existingImages } = req.validatedBody || req.body;
-    const newUploadedImages = getUploadedImageUrls(req);
+    const newUploadedImages = await getUploadedImageUrls(req);
+    const currentImages = normalizeImages(annonce.images);
 
     // Mise à jour des champs textes
     annonce.titre = titre ?? annonce.titre;
@@ -329,6 +332,10 @@ export const updateMyAnnonce = async (req, res) => {
 
     // 3. On applique la limite de 5 et on enregistre
     annonce.images = sanitizeImages(finalImages.slice(0, 5));
+
+    // 4. Nettoyage des images retirées (Cloudinary uniquement, no-op en local)
+    const removedImages = currentImages.filter((imageUrl) => !annonce.images.includes(imageUrl));
+    await deleteImagesByUrls(removedImages);
 
     await annonce.save();
     return res.json({ message: "Annonce modifiée avec succès.", annonce: serializeAnnonce(annonce) });

@@ -1,5 +1,6 @@
 import { Op, fn, col } from "sequelize";
 import db from "../models/index.js";
+import { deleteImagesByUrls } from "../services/cloudinary.service.js";
 
 const MAX_LIMIT = 50;
 
@@ -178,10 +179,13 @@ export async function adminDeleteAnnonce(req, res) {
       return res.status(400).json({ message: "ID annonce invalide." });
     }
 
-    const deleted = await Annonce.destroy({ where: { id: annonceId } });
-    if (!deleted) {
+    const annonce = await Annonce.findByPk(annonceId);
+    if (!annonce) {
       return res.status(404).json({ message: "Annonce introuvable." });
     }
+
+    await deleteImagesByUrls(normalizeImages(annonce.images));
+    await annonce.destroy();
 
     return res.json({ message: "Annonce supprimée." });
   } catch (error) {
