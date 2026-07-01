@@ -52,6 +52,8 @@ export default function MessagesPage() {
     return `${selected.otherUser.id}-${selected.annonceId || 0}`;
   }, [selected]);
 
+  const selectedIsDraftConversation = Boolean(selected?.isDraftConversation);
+
   const loadConversations = useCallback(async (keepSelection = true) => {
     const res = await api.get("/messages/conversations");
     const nextList = res.data?.conversations || [];
@@ -69,6 +71,7 @@ export default function MessagesPage() {
         setSelected(existing);
       } else {
         setSelected({
+          isDraftConversation: true,
           otherUser: { id: fromQueryUser, pseudo: searchParams.get("pseudo") || "Utilisateur" },
           annonceId: fromQueryAnnonce || null,
           annonce: fromQueryAnnonce
@@ -91,9 +94,13 @@ export default function MessagesPage() {
       (c) => `${c.otherUser?.id}-${c.annonceId || 0}` === selectedKey
     );
     if (!selectedStillExists) {
+      // conversation temporaire garder tant que le message n'esqt pas envoyé
+      if (keepSelection && selectedIsDraftConversation) {
+        return;
+      }
       setSelected(nextList[0] || null);
     }
-  }, [searchParams, selectedKey]);
+  }, [searchParams, selectedIsDraftConversation, selectedKey]);
 
   const loadThread = useCallback(async (current, options = {}) => {
     const { silent = false } = options;
