@@ -53,14 +53,24 @@ export default function MessagesPage() {
   }, [selected]);
 
   const selectedIsDraftConversation = Boolean(selected?.isDraftConversation);
+  const queryUserId = useMemo(
+    () => Number.parseInt(searchParams.get("userId") || "", 10) || null,
+    [searchParams]
+  );
+  const queryAnnonceId = useMemo(
+    () => Number.parseInt(searchParams.get("annonceId") || "", 10) || null,
+    [searchParams]
+  );
+  const queryPseudo = useMemo(() => searchParams.get("pseudo") || "Utilisateur", [searchParams]);
+  const queryAnnonceTitre = useMemo(() => searchParams.get("annonceTitre") || "Annonce", [searchParams]);
 
   const loadConversations = useCallback(async (keepSelection = true) => {
     const res = await api.get("/messages/conversations");
     const nextList = res.data?.conversations || [];
     setConversations(nextList);
 
-    const fromQueryUser = Number.parseInt(searchParams.get("userId") || "", 10);
-    const fromQueryAnnonce = Number.parseInt(searchParams.get("annonceId") || "", 10);
+    const fromQueryUser = queryUserId;
+    const fromQueryAnnonce = queryAnnonceId;
 
     if (fromQueryUser && (!selectedKey || !keepSelection)) {
       const existing = nextList.find(
@@ -72,10 +82,10 @@ export default function MessagesPage() {
       } else {
         setSelected({
           isDraftConversation: true,
-          otherUser: { id: fromQueryUser, pseudo: searchParams.get("pseudo") || "Utilisateur" },
+          otherUser: { id: fromQueryUser, pseudo: queryPseudo },
           annonceId: fromQueryAnnonce || null,
           annonce: fromQueryAnnonce
-            ? { id: fromQueryAnnonce, titre: searchParams.get("annonceTitre") || "Annonce" }
+            ? { id: fromQueryAnnonce, titre: queryAnnonceTitre }
             : null,
           lastMessage: "",
           lastDate: null,
@@ -100,7 +110,7 @@ export default function MessagesPage() {
       }
       setSelected(nextList[0] || null);
     }
-  }, [searchParams, selectedIsDraftConversation, selectedKey]);
+  }, [queryAnnonceId, queryAnnonceTitre, queryPseudo, queryUserId, selectedIsDraftConversation, selectedKey]);
 
   const loadThread = useCallback(async (current, options = {}) => {
     const { silent = false } = options;
@@ -121,13 +131,22 @@ export default function MessagesPage() {
 
       // Remise a zero immediate du compteur non lu pour la conversation ouverte
       const openedKey = `${current.otherUser.id}-${current.annonceId || 0}`;
-      setConversations((prev) =>
-        prev.map((conv) => {
+      setConversations((prev) => {
+        let changed = false;
+        const next = prev.map((conv) => {
           const key = `${conv.otherUser.id}-${conv.annonceId || 0}`;
-          return key === openedKey ? { ...conv, unreadCount: 0 } : conv;
-        })
-      );
-      setSelected((prev) => (prev ? { ...prev, unreadCount: 0 } : prev));
+          if (key === openedKey && conv.unreadCount > 0) {
+            changed = true;
+            return { ...conv, unreadCount: 0 };
+          }
+          return conv;
+        });
+        return changed ? next : prev;
+      });
+      setSelected((prev) => {
+        if (!prev || prev.unreadCount === 0) return prev;
+        return { ...prev, unreadCount: 0 };
+      });
     } catch (err) {
       setError(err?.response?.data?.message || "Impossible de charger la conversation.");
     } finally {
