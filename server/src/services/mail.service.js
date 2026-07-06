@@ -57,7 +57,7 @@ function getMailConfig() {
 }
 
 function isMailConfigured(config) {
-  return Boolean(config.host && config.port && config.user && config.pass && config.adminEmail && config.from);
+  return Boolean(config.host && config.port && config.user && config.pass && config.from);
 }
 
 function createTransporter(config) {
@@ -286,7 +286,7 @@ function generateReportEmailHTML({ report, annonce, reporter }) {
 export async function sendAdminReportEmail({ report, annonce, reporter }) {
   const config = getMailConfig();
 
-  if (!isMailConfigured(config)) {
+  if (!isMailConfigured(config) || !config.adminEmail) {
     console.warn("[MAIL] Configuration SMTP absente. E-mail signalement non envoyé.");
     return { sent: false };
   }
