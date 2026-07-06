@@ -158,11 +158,14 @@ export async function register(req, res) {
     try {
       const verifyToken = await issueAuthToken(user.id, "verify_email", 24 * 60 * 60 * 1000);
 
-      const mailResult = await sendVerificationEmail({
-        email: user.email,
-        pseudo: user.pseudo,
-        token: verifyToken
-      });
+      const mailResult = await Promise.race([
+        sendVerificationEmail({
+          email: user.email,
+          pseudo: user.pseudo,
+          token: verifyToken
+        }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout SMTP")), 4000))
+      ]);
 
       if (mailResult?.sent === false) {
         verificationEmailAvailable = false;
