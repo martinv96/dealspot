@@ -1,7 +1,4 @@
 import nodemailer from "nodemailer";
-import dns from "dns";
-
-const RESEND_API_URL = "https://api.resend.com/emails";
 
 function parseMailerDsn(rawDsn) {
   const dsn = String(rawDsn || "").trim();
@@ -63,164 +60,20 @@ function isMailConfigured(config) {
   return Boolean(config.host && config.port && config.user && config.pass && config.from);
 }
 
-async function createTransporter(config) {
-  const connectionTimeout = Number(process.env.SMTP_CONNECTION_TIMEOUT_MS || 10000);
-  const greetingTimeout = Number(process.env.SMTP_GREETING_TIMEOUT_MS || 10000);
-  const socketTimeout = Number(process.env.SMTP_SOCKET_TIMEOUT_MS || 20000);
-  const family = Number(process.env.SMTP_FAMILY || 0);
-
-  let resolvedHost = config.host;
-  if (family === 4 || family === 6) {
-    const resolved = await dns.promises.lookup(config.host, { family, all: false });
-    resolvedHost = resolved.address;
-  }
-
-  const transportOptions = {
-    host: resolvedHost,
+function createTransporter(config) {
+  return nodemailer.createTransport({
+    host: config.host,
     port: config.port,
     secure: Boolean(config.secure),
     auth: {
       user: config.user,
       pass: config.pass
-    },
-    connectionTimeout,
-    greetingTimeout,
-    socketTimeout,
-    tls: {
-      servername: config.host
     }
-  };
-
-  if (family === 4 || family === 6) {
-    transportOptions.family = family;
-  }
-
-  return nodemailer.createTransport(transportOptions);
+  });
 }
 
 function getFrontendUrl() {
-  const rawUrl = process.env.FRONTEND_URL || "http://localhost:5173";
-  return String(rawUrl).replace(/\/+$/, "");
-}
-
-function shouldRetryWithAltPort(error) {
-  const retryableCodes = new Set(["ETIMEDOUT", "ESOCKET", "ENETUNREACH", "ECONNREFUSED"]);
-  return retryableCodes.has(String(error?.code || ""));
-}
-
-function getAltSmtpConfig(config) {
-  if (config.port === 465) {
-    return {
-      ...config,
-      port: 587,
-      secure: false
-    };
-  }
-
-  if (config.port === 587) {
-    return {
-      ...config,
-      port: 465,
-      secure: true
-    };
-  }
-
-  return null;
-}
-
-async function sendWithNetworkFallback(config, message) {
-  const transporter = await createTransporter(config);
-
-  try {
-    return await transporter.sendMail(message);
-  } catch (error) {
-    const altConfig = getAltSmtpConfig(config);
-    if (!altConfig || !shouldRetryWithAltPort(error)) {
-      throw error;
-    }
-
-    console.warn(
-      `[MAIL] Echec SMTP ${config.host}:${config.port}. Tentative fallback sur ${altConfig.host}:${altConfig.port}.`
-    );
-
-    const fallbackTransporter = await createTransporter(altConfig);
-    try {
-      return await fallbackTransporter.sendMail(message);
-    } catch (fallbackError) {
-      fallbackError.previousError = {
-        message: error?.message,
-        code: error?.code,
-        command: error?.command
-      };
-      throw fallbackError;
-    }
-  }
-}
-
-async function sendWithResend(message, fallbackFrom) {
-  const apiKey = String(process.env.RESEND_API_KEY || "").trim();
-  if (!apiKey) {
-    throw new Error("RESEND_API_KEY manquant.");
-  }
-
-  const from = String(process.env.RESEND_FROM || fallbackFrom || "").trim();
-  if (!from) {
-    throw new Error("Adresse expediteur manquante pour Resend.");
-  }
-
-  const response = await fetch(RESEND_API_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      from,
-      to: Array.isArray(message.to) ? message.to : [message.to],
-      subject: message.subject,
-      html: message.html
-    })
-  });
-
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const details = payload?.message || payload?.error || response.statusText;
-    throw new Error(`Resend API error ${response.status}: ${details}`);
-  }
-
-  return {
-    messageId: payload?.id || null,
-    sent: true,
-    provider: "resend"
-  };
-}
-
-async function sendMailWithFallback(config, message) {
-  try {
-    const info = await sendWithNetworkFallback(config, message);
-    return { ...info, sent: true, provider: "smtp" };
-  } catch (smtpError) {
-    const allowHttpFallback = String(process.env.MAIL_HTTP_FALLBACK || "true").toLowerCase() !== "false";
-    const hasResend = Boolean(String(process.env.RESEND_API_KEY || "").trim());
-
-    if (!allowHttpFallback || !hasResend) {
-      throw smtpError;
-    }
-
-    console.warn("[MAIL] SMTP indisponible, tentative d'envoi via Resend API.");
-    try {
-      const resendInfo = await sendWithResend(message, config.from);
-      return resendInfo;
-    } catch (resendError) {
-      resendError.previousError = {
-        message: smtpError?.message,
-        code: smtpError?.code,
-        command: smtpError?.command,
-        previousError: smtpError?.previousError
-      };
-      throw resendError;
-    }
-  }
+  return process.env.FRONTEND_URL || "http://localhost:5173";
 }
 
 function generateReportEmailHTML({ report, annonce, reporter }) {
@@ -441,7 +294,9 @@ export async function sendAdminReportEmail({ report, annonce, reporter }) {
   const subject = `[DealSpot] Nouveau signalement - ${annonceTitle}`;
   const html = generateReportEmailHTML({ report, annonce, reporter });
 
-  const info = await sendMailWithFallback(config, {
+  const transporter = createTransporter(config);
+
+  const info = await transporter.sendMail({
     from: config.from,
     to: config.adminEmail,
     subject,
@@ -460,7 +315,9 @@ export async function sendVerificationEmail({ email, pseudo, token }) {
 
   const verifyUrl = `${getFrontendUrl()}/verification-email?token=${encodeURIComponent(token)}`;
 
-  const info = await sendMailWithFallback(config, {
+  const transporter = createTransporter(config);
+
+  const info = await transporter.sendMail({
     from: config.from,
     to: email,
     subject: "[DealSpot] Verifiez votre adresse email",
@@ -491,7 +348,9 @@ export async function sendResetPasswordEmail({ email, pseudo, token }) {
 
   const resetUrl = `${getFrontendUrl()}/reinitialiser-mot-de-passe?token=${encodeURIComponent(token)}`;
 
-  const info = await sendMailWithFallback(config, {
+  const transporter = createTransporter(config);
+
+  const info = await transporter.sendMail({
     from: config.from,
     to: email,
     subject: "[DealSpot] Reinitialisation de votre mot de passe",

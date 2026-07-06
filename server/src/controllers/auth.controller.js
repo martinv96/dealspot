@@ -8,20 +8,6 @@ import { sendResetPasswordEmail, sendVerificationEmail } from "../services/mail.
 const User = db.User;
 const UserSecurity = db.UserSecurity;
 const AuthToken = db.AuthToken;
-const MAIL_SEND_TIMEOUT_MS = Number(process.env.MAIL_SEND_TIMEOUT_MS || 0);
-
-function withMailTimeout(promise) {
-  if (!Number.isFinite(MAIL_SEND_TIMEOUT_MS) || MAIL_SEND_TIMEOUT_MS <= 0) {
-    return promise;
-  }
-
-  return Promise.race([
-    promise,
-    new Promise((_, reject) =>
-      setTimeout(() => reject(new Error(`Timeout SMTP after ${MAIL_SEND_TIMEOUT_MS}ms`)), MAIL_SEND_TIMEOUT_MS)
-    )
-  ]);
-}
 
 function isPasswordSecure(password) {
   const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
@@ -166,29 +152,19 @@ export async function register(req, res) {
       role: finalRole
     });
 
-    await ensureUserSecurity(user.id, { email_verified: false });
+    await ensureUserSecurity(user.id, { email_verified: true });
 
     try {
       const verifyToken = await issueAuthToken(user.id, "verify_email", 24 * 60 * 60 * 1000);
       
-      await withMailTimeout(
-        sendVerificationEmail({
-          email: user.email,
-          pseudo: user.pseudo,
-          token: verifyToken
-        })
-      );
+      await sendVerificationEmail({
+        email: user.email,
+        pseudo: user.pseudo,
+        token: verifyToken
+      });
 
     } catch (mailError) {
-      console.error("⚠️ [MAIL ERROR] Échec de l'envoi mais inscription validée :", {
-        message: mailError?.message,
-        mailTimeoutMs: MAIL_SEND_TIMEOUT_MS,
-        code: mailError?.code,
-        command: mailError?.command,
-        response: mailError?.response,
-        responseCode: mailError?.responseCode,
-        previousError: mailError?.previousError
-      });
+      console.error("⚠️ [MAIL ERROR] Échec de l'envoi mais inscription validée :", mailError.message);
     }
 
     return res.status(201).json({
@@ -215,8 +191,8 @@ export async function login(req, res) {
       return res.status(401).json({ message: "Identifiants invalides." });
     }
 
-    const security = await ensureUserSecurity(user.id, { email_verified: false });
-    if (!security.email_verified) {
+    const security = await UserSecurity.findOne({ where: { user_id: user.id } });
+    if (security && !security.email_verified) {
       return res.status(403).json({
         message: "Votre adresse email n'est pas encore vérifiée. Consultez votre boîte mail."
       });
@@ -287,23 +263,13 @@ export async function forgotPassword(req, res) {
     if (user) {
       try {
         const resetToken = await issueAuthToken(user.id, "reset_password", 60 * 60 * 1000);
-        await withMailTimeout(
-          sendResetPasswordEmail({
-            email: user.email,
-            pseudo: user.pseudo,
-            token: resetToken
-          })
-        );
-      } catch (mailError) {
-        console.error("Erreur envoi email reset password:", {
-          message: mailError?.message,
-          mailTimeoutMs: MAIL_SEND_TIMEOUT_MS,
-          code: mailError?.code,
-          command: mailError?.command,
-          response: mailError?.response,
-          responseCode: mailError?.responseCode,
-          previousError: mailError?.previousError
+        await sendResetPasswordEmail({
+          email: user.email,
+          pseudo: user.pseudo,
+          token: resetToken
         });
+      } catch (mailError) {
+        console.error("Erreur envoi email reset password:", mailError.message);
       }
     }
 
