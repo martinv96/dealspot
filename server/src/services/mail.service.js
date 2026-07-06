@@ -64,8 +64,9 @@ function createTransporter(config) {
   const connectionTimeout = Number(process.env.SMTP_CONNECTION_TIMEOUT_MS || 10000);
   const greetingTimeout = Number(process.env.SMTP_GREETING_TIMEOUT_MS || 10000);
   const socketTimeout = Number(process.env.SMTP_SOCKET_TIMEOUT_MS || 20000);
+  const family = Number(process.env.SMTP_FAMILY || 0);
 
-  return nodemailer.createTransport({
+  const transportOptions = {
     host: config.host,
     port: config.port,
     secure: Boolean(config.secure),
@@ -76,7 +77,13 @@ function createTransporter(config) {
     connectionTimeout,
     greetingTimeout,
     socketTimeout
-  });
+  };
+
+  if (family === 4 || family === 6) {
+    transportOptions.family = family;
+  }
+
+  return nodemailer.createTransport(transportOptions);
 }
 
 function getFrontendUrl() {
