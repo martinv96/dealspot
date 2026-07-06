@@ -152,7 +152,7 @@ export async function register(req, res) {
       role: finalRole
     });
 
-    await ensureUserSecurity(user.id, { email_verified: true });
+    await ensureUserSecurity(user.id, { email_verified: false });
 
     try {
       const verifyToken = await issueAuthToken(user.id, "verify_email", 24 * 60 * 60 * 1000);
@@ -195,8 +195,8 @@ export async function login(req, res) {
       return res.status(401).json({ message: "Identifiants invalides." });
     }
 
-    const security = await UserSecurity.findOne({ where: { user_id: user.id } });
-    if (security && !security.email_verified) {
+    const security = await ensureUserSecurity(user.id, { email_verified: false });
+    if (!security.email_verified) {
       return res.status(403).json({
         message: "Votre adresse email n'est pas encore vérifiée. Consultez votre boîte mail."
       });

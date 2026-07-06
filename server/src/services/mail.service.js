@@ -73,7 +73,8 @@ function createTransporter(config) {
 }
 
 function getFrontendUrl() {
-  return process.env.FRONTEND_URL || "http://localhost:5173";
+  const rawUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+  return String(rawUrl).replace(/\/+$/, "");
 }
 
 function generateReportEmailHTML({ report, annonce, reporter }) {
