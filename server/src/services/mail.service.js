@@ -1,6 +1,8 @@
 import nodemailer from "nodemailer";
 import dns from "dns";
 
+const RESEND_API_URL = "https://api.resend.com/emails";
+
 function parseMailerDsn(rawDsn) {
   const dsn = String(rawDsn || "").trim();
   if (!dsn) return null;
@@ -151,6 +153,72 @@ async function sendWithNetworkFallback(config, message) {
         command: error?.command
       };
       throw fallbackError;
+    }
+  }
+}
+
+async function sendWithResend(message, fallbackFrom) {
+  const apiKey = String(process.env.RESEND_API_KEY || "").trim();
+  if (!apiKey) {
+    throw new Error("RESEND_API_KEY manquant.");
+  }
+
+  const from = String(process.env.RESEND_FROM || fallbackFrom || "").trim();
+  if (!from) {
+    throw new Error("Adresse expediteur manquante pour Resend.");
+  }
+
+  const response = await fetch(RESEND_API_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      from,
+      to: Array.isArray(message.to) ? message.to : [message.to],
+      subject: message.subject,
+      html: message.html
+    })
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const details = payload?.message || payload?.error || response.statusText;
+    throw new Error(`Resend API error ${response.status}: ${details}`);
+  }
+
+  return {
+    messageId: payload?.id || null,
+    sent: true,
+    provider: "resend"
+  };
+}
+
+async function sendMailWithFallback(config, message) {
+  try {
+    const info = await sendWithNetworkFallback(config, message);
+    return { ...info, sent: true, provider: "smtp" };
+  } catch (smtpError) {
+    const allowHttpFallback = String(process.env.MAIL_HTTP_FALLBACK || "true").toLowerCase() !== "false";
+    const hasResend = Boolean(String(process.env.RESEND_API_KEY || "").trim());
+
+    if (!allowHttpFallback || !hasResend) {
+      throw smtpError;
+    }
+
+    console.warn("[MAIL] SMTP indisponible, tentative d'envoi via Resend API.");
+    try {
+      const resendInfo = await sendWithResend(message, config.from);
+      return resendInfo;
+    } catch (resendError) {
+      resendError.previousError = {
+        message: smtpError?.message,
+        code: smtpError?.code,
+        command: smtpError?.command,
+        previousError: smtpError?.previousError
+      };
+      throw resendError;
     }
   }
 }
@@ -373,7 +441,7 @@ export async function sendAdminReportEmail({ report, annonce, reporter }) {
   const subject = `[DealSpot] Nouveau signalement - ${annonceTitle}`;
   const html = generateReportEmailHTML({ report, annonce, reporter });
 
-  const info = await sendWithNetworkFallback(config, {
+  const info = await sendMailWithFallback(config, {
     from: config.from,
     to: config.adminEmail,
     subject,
@@ -392,7 +460,7 @@ export async function sendVerificationEmail({ email, pseudo, token }) {
 
   const verifyUrl = `${getFrontendUrl()}/verification-email?token=${encodeURIComponent(token)}`;
 
-  const info = await sendWithNetworkFallback(config, {
+  const info = await sendMailWithFallback(config, {
     from: config.from,
     to: email,
     subject: "[DealSpot] Verifiez votre adresse email",
@@ -423,7 +491,7 @@ export async function sendResetPasswordEmail({ email, pseudo, token }) {
 
   const resetUrl = `${getFrontendUrl()}/reinitialiser-mot-de-passe?token=${encodeURIComponent(token)}`;
 
-  const info = await sendWithNetworkFallback(config, {
+  const info = await sendMailWithFallback(config, {
     from: config.from,
     to: email,
     subject: "[DealSpot] Reinitialisation de votre mot de passe",
