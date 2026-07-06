@@ -138,7 +138,6 @@ export async function register(req, res) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-
     let finalRole = "acheteur";
     if (role === "vendeur") {
       finalRole = "vendeur";
@@ -154,21 +153,30 @@ export async function register(req, res) {
 
     await ensureUserSecurity(user.id, { email_verified: true });
 
+    let verificationEmailAvailable = true;
+
     try {
       const verifyToken = await issueAuthToken(user.id, "verify_email", 24 * 60 * 60 * 1000);
-      
-      await sendVerificationEmail({
+
+      const mailResult = await sendVerificationEmail({
         email: user.email,
         pseudo: user.pseudo,
         token: verifyToken
       });
 
+      if (mailResult?.sent === false) {
+        verificationEmailAvailable = false;
+      }
+
     } catch (mailError) {
+      verificationEmailAvailable = false;
       console.error("⚠️ [MAIL ERROR] Échec de l'envoi mais inscription validée :", mailError.message);
     }
 
     return res.status(201).json({
-      message: "Compte créé avec succès. Vérifiez votre adresse email pour activer votre compte.",
+      message: verificationEmailAvailable
+        ? "Compte créé avec succès. Vérifiez votre adresse email pour activer votre compte."
+        : "Vérification email indisponible pour le moment. Vous êtes cependant inscrit.",
       user: userDto(user)
     });
   } catch (error) {
