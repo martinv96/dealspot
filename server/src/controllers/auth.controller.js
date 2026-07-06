@@ -8,7 +8,7 @@ import { sendResetPasswordEmail, sendVerificationEmail } from "../services/mail.
 const User = db.User;
 const UserSecurity = db.UserSecurity;
 const AuthToken = db.AuthToken;
-const MAIL_SEND_TIMEOUT_MS = Number(process.env.MAIL_SEND_TIMEOUT_MS || 20000);
+const MAIL_SEND_TIMEOUT_MS = Number(process.env.MAIL_SEND_TIMEOUT_MS || 0);
 
 function withMailTimeout(promise) {
   if (!Number.isFinite(MAIL_SEND_TIMEOUT_MS) || MAIL_SEND_TIMEOUT_MS <= 0) {
@@ -17,7 +17,9 @@ function withMailTimeout(promise) {
 
   return Promise.race([
     promise,
-    new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout SMTP")), MAIL_SEND_TIMEOUT_MS))
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(`Timeout SMTP after ${MAIL_SEND_TIMEOUT_MS}ms`)), MAIL_SEND_TIMEOUT_MS)
+    )
   ]);
 }
 
@@ -178,7 +180,14 @@ export async function register(req, res) {
       );
 
     } catch (mailError) {
-      console.error("⚠️ [MAIL ERROR] Échec de l'envoi mais inscription validée :", mailError.message);
+      console.error("⚠️ [MAIL ERROR] Échec de l'envoi mais inscription validée :", {
+        message: mailError?.message,
+        mailTimeoutMs: MAIL_SEND_TIMEOUT_MS,
+        code: mailError?.code,
+        command: mailError?.command,
+        response: mailError?.response,
+        responseCode: mailError?.responseCode
+      });
     }
 
     return res.status(201).json({
@@ -285,7 +294,14 @@ export async function forgotPassword(req, res) {
           })
         );
       } catch (mailError) {
-        console.error("Erreur envoi email reset password:", mailError.message);
+        console.error("Erreur envoi email reset password:", {
+          message: mailError?.message,
+          mailTimeoutMs: MAIL_SEND_TIMEOUT_MS,
+          code: mailError?.code,
+          command: mailError?.command,
+          response: mailError?.response,
+          responseCode: mailError?.responseCode
+        });
       }
     }
 
