@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import dns from "dns";
 
 function parseMailerDsn(rawDsn) {
   const dsn = String(rawDsn || "").trim();
@@ -60,14 +61,20 @@ function isMailConfigured(config) {
   return Boolean(config.host && config.port && config.user && config.pass && config.from);
 }
 
-function createTransporter(config) {
+async function createTransporter(config) {
   const connectionTimeout = Number(process.env.SMTP_CONNECTION_TIMEOUT_MS || 10000);
   const greetingTimeout = Number(process.env.SMTP_GREETING_TIMEOUT_MS || 10000);
   const socketTimeout = Number(process.env.SMTP_SOCKET_TIMEOUT_MS || 20000);
   const family = Number(process.env.SMTP_FAMILY || 0);
 
+  let resolvedHost = config.host;
+  if (family === 4 || family === 6) {
+    const resolved = await dns.promises.lookup(config.host, { family, all: false });
+    resolvedHost = resolved.address;
+  }
+
   const transportOptions = {
-    host: config.host,
+    host: resolvedHost,
     port: config.port,
     secure: Boolean(config.secure),
     auth: {
@@ -76,7 +83,10 @@ function createTransporter(config) {
     },
     connectionTimeout,
     greetingTimeout,
-    socketTimeout
+    socketTimeout,
+    tls: {
+      servername: config.host
+    }
   };
 
   if (family === 4 || family === 6) {
@@ -305,7 +315,7 @@ export async function sendAdminReportEmail({ report, annonce, reporter }) {
     return { sent: false };
   }
 
-  const transporter = createTransporter(config);
+  const transporter = await createTransporter(config);
 
   const annonceTitle = annonce?.titre || `Annonce #${report.annonce_id}`;
   const subject = `[DealSpot] Nouveau signalement - ${annonceTitle}`;
@@ -328,7 +338,7 @@ export async function sendVerificationEmail({ email, pseudo, token }) {
     return { sent: false };
   }
 
-  const transporter = createTransporter(config);
+  const transporter = await createTransporter(config);
   const verifyUrl = `${getFrontendUrl()}/verification-email?token=${encodeURIComponent(token)}`;
 
   const info = await transporter.sendMail({
@@ -360,7 +370,7 @@ export async function sendResetPasswordEmail({ email, pseudo, token }) {
     return { sent: false };
   }
 
-  const transporter = createTransporter(config);
+  const transporter = await createTransporter(config);
   const resetUrl = `${getFrontendUrl()}/reinitialiser-mot-de-passe?token=${encodeURIComponent(token)}`;
 
   const info = await transporter.sendMail({
