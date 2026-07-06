@@ -186,7 +186,8 @@ export async function register(req, res) {
         code: mailError?.code,
         command: mailError?.command,
         response: mailError?.response,
-        responseCode: mailError?.responseCode
+        responseCode: mailError?.responseCode,
+        previousError: mailError?.previousError
       });
     }
 
@@ -300,7 +301,8 @@ export async function forgotPassword(req, res) {
           code: mailError?.code,
           command: mailError?.command,
           response: mailError?.response,
-          responseCode: mailError?.responseCode
+          responseCode: mailError?.responseCode,
+          previousError: mailError?.previousError
         });
       }
     }

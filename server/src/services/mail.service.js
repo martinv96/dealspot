@@ -101,6 +101,60 @@ function getFrontendUrl() {
   return String(rawUrl).replace(/\/+$/, "");
 }
 
+function shouldRetryWithAltPort(error) {
+  const retryableCodes = new Set(["ETIMEDOUT", "ESOCKET", "ENETUNREACH", "ECONNREFUSED"]);
+  return retryableCodes.has(String(error?.code || ""));
+}
+
+function getAltSmtpConfig(config) {
+  if (config.port === 465) {
+    return {
+      ...config,
+      port: 587,
+      secure: false
+    };
+  }
+
+  if (config.port === 587) {
+    return {
+      ...config,
+      port: 465,
+      secure: true
+    };
+  }
+
+  return null;
+}
+
+async function sendWithNetworkFallback(config, message) {
+  const transporter = await createTransporter(config);
+
+  try {
+    return await transporter.sendMail(message);
+  } catch (error) {
+    const altConfig = getAltSmtpConfig(config);
+    if (!altConfig || !shouldRetryWithAltPort(error)) {
+      throw error;
+    }
+
+    console.warn(
+      `[MAIL] Echec SMTP ${config.host}:${config.port}. Tentative fallback sur ${altConfig.host}:${altConfig.port}.`
+    );
+
+    const fallbackTransporter = await createTransporter(altConfig);
+    try {
+      return await fallbackTransporter.sendMail(message);
+    } catch (fallbackError) {
+      fallbackError.previousError = {
+        message: error?.message,
+        code: error?.code,
+        command: error?.command
+      };
+      throw fallbackError;
+    }
+  }
+}
+
 function generateReportEmailHTML({ report, annonce, reporter }) {
   const motifLabel = {
     arnaque: "🚨 Arnaque / Fraude",
@@ -315,13 +369,11 @@ export async function sendAdminReportEmail({ report, annonce, reporter }) {
     return { sent: false };
   }
 
-  const transporter = await createTransporter(config);
-
   const annonceTitle = annonce?.titre || `Annonce #${report.annonce_id}`;
   const subject = `[DealSpot] Nouveau signalement - ${annonceTitle}`;
   const html = generateReportEmailHTML({ report, annonce, reporter });
 
-  const info = await transporter.sendMail({
+  const info = await sendWithNetworkFallback(config, {
     from: config.from,
     to: config.adminEmail,
     subject,
@@ -338,10 +390,9 @@ export async function sendVerificationEmail({ email, pseudo, token }) {
     return { sent: false };
   }
 
-  const transporter = await createTransporter(config);
   const verifyUrl = `${getFrontendUrl()}/verification-email?token=${encodeURIComponent(token)}`;
 
-  const info = await transporter.sendMail({
+  const info = await sendWithNetworkFallback(config, {
     from: config.from,
     to: email,
     subject: "[DealSpot] Verifiez votre adresse email",
@@ -370,10 +421,9 @@ export async function sendResetPasswordEmail({ email, pseudo, token }) {
     return { sent: false };
   }
 
-  const transporter = await createTransporter(config);
   const resetUrl = `${getFrontendUrl()}/reinitialiser-mot-de-passe?token=${encodeURIComponent(token)}`;
 
-  const info = await transporter.sendMail({
+  const info = await sendWithNetworkFallback(config, {
     from: config.from,
     to: email,
     subject: "[DealSpot] Reinitialisation de votre mot de passe",
