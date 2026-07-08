@@ -55,6 +55,44 @@
   display: block;
 }
 
+.brand-private {
+  gap: 0;
+}
+
+.brand-public {
+  gap: 0;
+}
+
+.brand-logo-wrap-private {
+  width: 168px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.brand-logo-wrap-public {
+  width: 168px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.brand-logo-private {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: left center;
+}
+
+.brand-logo-public {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: left center;
+}
+
 .nav {
   display: flex;
   align-items: center;
@@ -109,6 +147,24 @@
 
   .brand {
     font-size: 1.1rem;
+  }
+
+  .brand-logo-private {
+    object-position: left center;
+  }
+
+  .brand-logo-public {
+    object-position: left center;
+  }
+
+  .brand-logo-wrap-private {
+    width: 132px;
+    height: 34px;
+  }
+
+  .brand-logo-wrap-public {
+    width: 132px;
+    height: 34px;
   }
 
   .topbar-menu-toggle {

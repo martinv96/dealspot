@@ -6,6 +6,7 @@ import {
 	updateMe,
 	changePassword,
 	getUserPublicProfile,
+	getMyHistory,
 	verifyEmail,
 	forgotPassword,
 	resetPassword
@@ -30,6 +31,7 @@ router.get("/verify", verifyEmail);
 router.post("/forgot-password", validateBody(validateForgotPasswordBody), forgotPassword);
 router.post("/reset-password", validateBody(validateResetPasswordBody), resetPassword);
 router.get("/me", authMiddleware, me);
+router.get("/me/history", authMiddleware, getMyHistory);
 router.put("/me", authMiddleware, validateBody(validateUpdateProfileBody), updateMe);
 router.put("/me/password", authMiddleware, validateBody(validateChangePasswordBody), changePassword);
 router.get("/users/:id", getUserPublicProfile);

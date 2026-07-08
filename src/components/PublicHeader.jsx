@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { FaBars, FaTimes } from "react-icons/fa";
-import logo from "../assets/logo3.png";
+import logo from "../assets/LogoDealspot.png";
 
 export default function PublicHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -9,9 +9,10 @@ export default function PublicHeader() {
   return (
     <header className="topbar">
       <div className="topbar-main">
-        <Link to="/" className="brand">
-          <img src={logo} alt="logo dealspot" className="brand-logo"/>
-          <span>DealSpot</span>
+        <Link to="/" className="brand brand-public" aria-label="Accueil DealSpot">
+          <span className="brand-logo-wrap-public">
+            <img src={logo} alt="logo dealspot" className="brand-logo brand-logo-public"/>
+          </span>
         </Link>
 
         <button

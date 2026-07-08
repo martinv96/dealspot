@@ -6,6 +6,7 @@ import createReportModel from "./Report.js";
 import createFavoriteModel from "./Favorite.js";
 import createUserSecurityModel from "./UserSecurity.js";
 import createAuthTokenModel from "./AuthToken.js";
+import createUserHistoryModel from "./UserHistory.js";
 
 const User = createUserModel(sequelize);
 const Annonce = createAnnonceModel(sequelize);
@@ -14,6 +15,7 @@ const Report = createReportModel(sequelize);
 const Favorite = createFavoriteModel(sequelize);
 const UserSecurity = createUserSecurityModel(sequelize);
 const AuthToken = createAuthTokenModel(sequelize);
+const UserHistory = createUserHistoryModel(sequelize);
 
 // --- Définition des Relations (Associations) ---
 // Un utilisateur possède plusieurs annonces
@@ -48,6 +50,9 @@ UserSecurity.belongsTo(User, { foreignKey: "user_id", as: "user" });
 User.hasMany(AuthToken, { foreignKey: "user_id", as: "authTokens" });
 AuthToken.belongsTo(User, { foreignKey: "user_id", as: "user" });
 
+User.hasMany(UserHistory, { foreignKey: "user_id", as: "historyEntries" });
+UserHistory.belongsTo(User, { foreignKey: "user_id", as: "user" });
+
 // On exporte tout dans un objet "db" par défaut pour le controller
 const db = {
   sequelize,
@@ -57,7 +62,8 @@ const db = {
   Report,
   Favorite,
   UserSecurity,
-  AuthToken
+  AuthToken,
+  UserHistory
 };
 
 export default db;

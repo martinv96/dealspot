@@ -12,7 +12,7 @@ import {
   FaBars,
   FaTimes
 } from "react-icons/fa";
-import logo from "../assets/logo3.png";
+import logo from "../assets/LogoDealspot.png";
 import { useAuth } from "../context/useAuth";
 import { useFavorites } from "../hooks/useFavorites";
 import api from "../services/api";
@@ -80,9 +80,10 @@ export default function PrivateHeader() {
   return (
     <header className="topbar">
       <div className="topbar-main">
-        <Link to="/app" className="brand">
-          <img src={logo} alt="logo Dealspot" className="brand-logo" />
-          <span>DealSpot</span>
+        <Link to="/app" className="brand brand-private" aria-label="Accueil DealSpot">
+          <span className="brand-logo-wrap-private">
+            <img src={logo} alt="logo Dealspot" className="brand-logo brand-logo-private" />
+          </span>
         </Link>
 
         <button

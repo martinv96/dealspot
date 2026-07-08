@@ -8,6 +8,7 @@ import { sendResetPasswordEmail, sendVerificationEmail } from "../services/mail.
 const User = db.User;
 const UserSecurity = db.UserSecurity;
 const AuthToken = db.AuthToken;
+const UserHistory = db.UserHistory;
 
 function isPasswordSecure(password) {
   const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
@@ -100,6 +101,17 @@ async function findAuthTokenByHash(plainToken, type) {
   });
 }
 
+async function recordHistory(userId, category, title, subtitle, status = "succès", details = null) {
+  await UserHistory.create({
+    user_id: userId,
+    category,
+    title,
+    subtitle,
+    status,
+    details
+  });
+}
+
 export async function getUserPublicProfile(req, res) {
   try {
     const userId = Number.parseInt(req.params.id, 10);
@@ -119,6 +131,215 @@ export async function getUserPublicProfile(req, res) {
   } catch (error) {
     console.error("Erreur getUserPublicProfile:", error);
     return res.status(500).json({ message: "Erreur serveur." });
+  }
+}
+
+export async function getMyHistory(req, res) {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "Token invalide." });
+    }
+
+    const limitInput = Number.parseInt(req.query.limit, 10);
+    const limit = Number.isNaN(limitInput) || limitInput <= 0 ? 5 : Math.min(limitInput, 20);
+    const comptePageInput = Number.parseInt(req.query.comptePage, 10);
+    const annoncesPageInput = Number.parseInt(req.query.annoncesPage, 10);
+    const messagesPageInput = Number.parseInt(req.query.messagesPage, 10);
+    const signalementsPageInput = Number.parseInt(req.query.signalementsPage, 10);
+
+    const comptePage = Number.isNaN(comptePageInput) || comptePageInput <= 0 ? 1 : comptePageInput;
+    const annoncesPage = Number.isNaN(annoncesPageInput) || annoncesPageInput <= 0 ? 1 : annoncesPageInput;
+    const messagesPage = Number.isNaN(messagesPageInput) || messagesPageInput <= 0 ? 1 : messagesPageInput;
+    const signalementsPage = Number.isNaN(signalementsPageInput) || signalementsPageInput <= 0 ? 1 : signalementsPageInput;
+
+    const user = await User.findByPk(userId, {
+      attributes: ["id", "pseudo", "date_inscription"]
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "Utilisateur introuvable." });
+    }
+
+    const [security, annoncesResult, messagesResult, reportsResult, historyEntries] = await Promise.all([
+      UserSecurity.findOne({
+        where: { user_id: userId },
+        attributes: ["email_verified_at"]
+      }),
+      db.Annonce.findAndCountAll({
+        where: { user_id: userId },
+        attributes: ["id", "titre", "categorie", "localisation", "date_publication", "statut", "description"],
+        order: [["date_publication", "DESC"]],
+        limit,
+        offset: (annoncesPage - 1) * limit
+      }),
+      db.Message.findAndCountAll({
+        where: {
+          [Op.or]: [{ sender_id: userId }, { receiver_id: userId }]
+        },
+        include: [
+          { model: db.User, as: "sender", attributes: ["id", "pseudo"] },
+          { model: db.User, as: "receiver", attributes: ["id", "pseudo"] },
+          { model: db.Annonce, as: "annonce", attributes: ["id", "titre"] }
+        ],
+        order: [["created_at", "DESC"]],
+        limit,
+        offset: (messagesPage - 1) * limit
+      }),
+      db.Report.findAndCountAll({
+        where: { user_id: userId },
+        include: [{ model: db.Annonce, as: "annonce", attributes: ["id", "titre"] }],
+        order: [["createdAt", "DESC"]],
+        limit,
+        offset: (signalementsPage - 1) * limit
+      }),
+      UserHistory.findAll({
+        where: { user_id: userId },
+        order: [["created_at", "DESC"]],
+        limit: 100
+      })
+    ]);
+
+    const compte = [
+      {
+        id: "account-created",
+        category: "compte",
+        title: "Compte créé",
+        subtitle: "Inscription",
+        date: user.date_inscription,
+        status: "actif",
+        statusLabel: "Actif",
+        details: `Compte de ${user.pseudo}`
+      },
+      ...(security?.email_verified_at
+        ? [
+            {
+              id: "email-verified",
+              category: "compte",
+              title: "Adresse email vérifiée",
+              subtitle: "Sécurité du compte",
+              date: security.email_verified_at,
+              status: "vérifié",
+              statusLabel: "Vérifié",
+              details: "Adresse email confirmée"
+            }
+          ]
+        : []),
+      ...historyEntries.map((entry) => ({
+        id: `history-${entry.id}`,
+        category: entry.category,
+        title: entry.title,
+        subtitle: entry.subtitle,
+        date: entry.created_at,
+        status: entry.status,
+        statusLabel: entry.status,
+        details: entry.details
+      }))
+    ].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    const accountHistory = [
+      {
+        id: "account-created",
+        category: "compte",
+        title: "Compte créé",
+        subtitle: "Inscription",
+        date: user.date_inscription,
+        status: "actif",
+        statusLabel: "Actif",
+        details: `Compte de ${user.pseudo}`
+      },
+      ...(security?.email_verified_at
+        ? [
+            {
+              id: "email-verified",
+              category: "compte",
+              title: "Adresse email vérifiée",
+              subtitle: "Sécurité du compte",
+              date: security.email_verified_at,
+              status: "vérifié",
+              statusLabel: "Vérifié",
+              details: "Adresse email confirmée"
+            }
+          ]
+        : []),
+      ...historyEntries.map((entry) => ({
+        id: `history-${entry.id}`,
+        category: entry.category,
+        title: entry.title,
+        subtitle: entry.subtitle,
+        date: entry.created_at,
+        status: entry.status,
+        statusLabel: entry.status,
+        details: entry.details
+      }))
+    ].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    const accountTotal = accountHistory.length;
+    const comptePages = Math.max(1, Math.ceil(accountTotal / limit));
+    const compteStart = (comptePage - 1) * limit;
+
+    const annoncesHistory = annoncesResult.rows.map((annonce) => ({
+      id: `annonce-${annonce.id}`,
+      category: "annonces",
+      title: annonce.titre,
+      subtitle: annonce.localisation ? `${annonce.categorie} · ${annonce.localisation}` : annonce.categorie,
+      date: annonce.date_publication,
+      status: annonce.statut,
+      statusLabel: annonce.statut,
+      details: annonce.description
+    }));
+
+    const messagesHistory = messagesResult.rows.map((message) => {
+      const isSent = message.sender_id === userId;
+      const otherUser = isSent ? message.receiver : message.sender;
+
+      return {
+        id: `message-${message.id}`,
+        category: "messages",
+        title: isSent ? `Message envoyé à ${otherUser?.pseudo || "Utilisateur"}` : `Message reçu de ${otherUser?.pseudo || "Utilisateur"}`,
+        subtitle: message.annonce?.titre ? `À propos de ${message.annonce.titre}` : "Conversation privée",
+        date: message.created_at,
+        status: isSent ? "envoyé" : message.lu ? "lu" : "non lu",
+        statusLabel: isSent ? "Envoyé" : message.lu ? "Lu" : "Non lu",
+        details: message.contenu
+      };
+    });
+
+    const signalementsHistory = reportsResult.rows.map((report) => ({
+      id: `report-${report.id}`,
+      category: "signalements",
+      title: `Signalement sur ${report.annonce?.titre || "une annonce"}`,
+      subtitle: report.motif || "Motif non renseigné",
+      date: report.createdAt,
+      status: report.statut || "en_attente",
+      statusLabel: report.statut || "en_attente",
+      details: report.description
+    }));
+
+    const paginate = (total) => ({
+      page: limit > 0 ? 1 : 1,
+      limit,
+      total,
+      pages: Math.max(1, Math.ceil(total / limit))
+    });
+
+    return res.json({
+      history: {
+        compte: accountHistory.slice(compteStart, compteStart + limit),
+        annonces: annoncesHistory,
+        messages: messagesHistory,
+        signalements: signalementsHistory
+      },
+      pagination: {
+        compte: { page: comptePage, limit, total: accountTotal, pages: comptePages },
+        annonces: { page: annoncesPage, limit, total: annoncesResult.count, pages: Math.max(1, Math.ceil(annoncesResult.count / limit)) },
+        messages: { page: messagesPage, limit, total: messagesResult.count, pages: Math.max(1, Math.ceil(messagesResult.count / limit)) },
+        signalements: { page: signalementsPage, limit, total: reportsResult.count, pages: Math.max(1, Math.ceil(reportsResult.count / limit)) }
+      }
+    });
+  } catch (error) {
+    console.error("Erreur getMyHistory:", error);
+    return res.status(500).json({ message: "Erreur serveur lors du chargement de l'historique." });
   }
 }
 
@@ -255,6 +476,7 @@ export async function verifyEmail(req, res) {
     security.email_verified = true;
     security.email_verified_at = new Date();
     await security.save();
+    await recordHistory(authToken.user_id, "compte", "Adresse email vérifiée", "Sécurité du compte", "succès");
 
     authToken.used_at = new Date();
     await authToken.save();
@@ -315,6 +537,7 @@ export async function resetPassword(req, res) {
 
     user.mot_de_passe = await bcrypt.hash(newPassword, 10);
     await user.save();
+    await recordHistory(user.id, "compte", "Mot de passe réinitialisé", "Sécurité du compte", "succès");
 
     authToken.used_at = new Date();
     await authToken.save();
@@ -376,6 +599,19 @@ export async function updateMe(req, res) {
     user.localisation = localisation || null;
 
     await user.save();
+    await recordHistory(
+      user.id,
+      "compte",
+      "Informations de compte mises à jour",
+      "Modification du profil",
+      "succès",
+      {
+        pseudo,
+        email,
+        telephone: telephone || null,
+        localisation: localisation || null
+      }
+    );
 
     return res.json({
       message: "Profil mis à jour.",
@@ -409,6 +645,7 @@ export async function changePassword(req, res) {
 
     user.mot_de_passe = await bcrypt.hash(newPassword, 10);
     await user.save();
+    await recordHistory(user.id, "compte", "Mot de passe modifié", "Sécurité du compte", "succès");
 
     return res.json({ message: "Mot de passe modifié avec succès." });
   } catch (error) {
