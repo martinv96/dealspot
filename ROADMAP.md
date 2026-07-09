@@ -176,6 +176,11 @@ Contexte actuel validé:
 - OG image sur AnnonceDetailPage (pour les partages)
 - Fichiers: toutes les pages principales
 
+### 13. modifier le logo (favicon)
+- modifier le logo en reprenant le logo du nouveau visuel de la page d'accueil
+- l'integrer dans le dossier public 
+
+
 ---
 
 ## 📊 Timing estimé

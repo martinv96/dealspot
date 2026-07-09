@@ -114,7 +114,7 @@ export default function PrivateHeader() {
           <Link to="/admin" className="nav-link" onClick={closeMenu}><FaUserShield /> Administrateur</Link>
         ) : null}
         <button onClick={handleLogout} className="nav-link nav-logout" type="button">
-          <FaSignOutAlt /> Deconnexion
+          <FaSignOutAlt /> Déconnexion
         </button>
       </nav>
     </header>

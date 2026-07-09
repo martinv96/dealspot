@@ -57,7 +57,7 @@ export default function LoginPage() {
             name="email"
             value={form.email}
             onChange={handleChange}
-            placeholder="Ex: elain.dupont@mail.fr"
+            placeholder="Ex: martinv@email.fr"
             required
           />
 
