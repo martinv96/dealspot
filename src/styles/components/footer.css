@@ -1,3 +1,4 @@
+/* footer */
 .footer {
   background: #f7f7f7;
   padding: 38px 38px 20px;
@@ -44,6 +45,7 @@
   font-size: 0.9rem;
 }
 
+/* responsive */
 @media (max-width: 700px) {
   .footer-cols {
     grid-template-columns: 1fr;

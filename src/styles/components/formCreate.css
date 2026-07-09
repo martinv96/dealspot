@@ -1,3 +1,4 @@
+/* formulaire création annonce */
 .create-annonce-page {
   width: 100%;
   max-width: 980px;
@@ -175,6 +176,7 @@
   min-width: 155px;
 }
 
+/* responsive */
 @media (max-width: 700px) {
   .create-annonce-page {
     padding: 24px 16px 48px;

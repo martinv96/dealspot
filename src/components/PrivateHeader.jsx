@@ -74,13 +74,13 @@ export default function PrivateHeader() {
   function handleLogout() {
     closeMenu();
     logout();
-    navigate("/connexion");
+    navigate("/login");
   }
 
   return (
     <header className="topbar">
       <div className="topbar-main">
-        <Link to="/app" className="brand brand-private" aria-label="Accueil DealSpot">
+        <Link to="/" className="brand brand-private" aria-label="Accueil DealSpot">
           <span className="brand-logo-wrap-private">
             <img src={logo} alt="logo Dealspot" className="brand-logo brand-logo-private" />
           </span>
@@ -98,7 +98,7 @@ export default function PrivateHeader() {
       </div>
 
       <nav className={`nav nav-private${isMenuOpen ? " open" : ""}`}>
-        <Link to="/app" className="nav-link" onClick={closeMenu}><FaHome /> Accueil</Link>
+        <Link to="/" className="nav-link" onClick={closeMenu}><FaHome /> Accueil</Link>
         <Link to="/mes-annonces" className="nav-link" onClick={closeMenu}><FaRegFileAlt /> Mes annonces</Link>
         <Link to="/creer-annonce" className="nav-link" onClick={closeMenu}><FaRegFileAlt /> Créer une annonce</Link>
         <Link to="/favoris" className="nav-link nav-favoris" onClick={closeMenu}>

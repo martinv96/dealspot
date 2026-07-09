@@ -1,3 +1,4 @@
+/* contactez nous */
 .contact-main {
   min-height: 60vh;
   display: flex;
@@ -142,4 +143,25 @@
   font-size: 0.95rem;
   margin-top: 10px;
   text-align: center;
+}
+
+/* responsive */
+@media (max-width: 480px) {
+  .contact-main {
+    padding: 20px 12px 40px;
+  }
+
+  .contact-card {
+    padding: 24px 20px 20px; 
+  }
+
+  .contact-card h2 {
+    font-size: 1.3rem; 
+    margin-bottom: 14px;
+  }
+  
+  .contact-card input,
+  .contact-card textarea {
+    font-size: 16px; 
+  }
 }

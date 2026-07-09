@@ -57,7 +57,7 @@ export default function FavoritesPage() {
           <div className="favorites-empty">
             <FaHeart className="favorites-empty-icon" />
             <p>Vous n'avez pas encore de favoris.</p>
-            <Link to="/app" className="btn btn-primary">Explorer les annonces</Link>
+            <Link to="/" className="btn btn-primary">Explorer les annonces</Link>
           </div>
         ) : (
           <div className="favorites-grid">

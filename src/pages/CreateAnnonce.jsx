@@ -73,7 +73,7 @@ const CreateAnnonce = () => {
         headers: { "Content-Type": "multipart/form-data" }
       });
       setFeedback({ type: "success", message: "Annonce enregistrée !" });
-      navigate("/app");
+      navigate("/");
     } catch (err) {
       console.error(err);
       setFeedback({

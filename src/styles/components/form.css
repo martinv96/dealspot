@@ -1,3 +1,4 @@
+/* formulaires (admin, profile, search, password) */
 .auth-page .auth-main {
   padding: 40px 20px 52px;
   min-height: 58vh;
@@ -106,6 +107,7 @@
   font-weight: 600;
 }
 
+/* responsive */
 @media (max-width: 1000px) {
   .auth-page .auth-main {
     max-width: 100%;

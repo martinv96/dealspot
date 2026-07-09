@@ -351,7 +351,7 @@ export default function AnnonceDetailPage() {
         ) : annonce ? (
           <>
             <section className="annonce-detail-breadcrumb">
-              <Link to={isAuthenticated ? "/app" : "/"}>Accueil</Link>
+              <Link to="/">Accueil</Link>
               <span>/</span>
               <span>{annonce.categorie}</span>
               <span>/</span>

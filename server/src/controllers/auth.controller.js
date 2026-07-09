@@ -200,43 +200,6 @@ export async function getMyHistory(req, res) {
       })
     ]);
 
-    const compte = [
-      {
-        id: "account-created",
-        category: "compte",
-        title: "Compte créé",
-        subtitle: "Inscription",
-        date: user.date_inscription,
-        status: "actif",
-        statusLabel: "Actif",
-        details: `Compte de ${user.pseudo}`
-      },
-      ...(security?.email_verified_at
-        ? [
-            {
-              id: "email-verified",
-              category: "compte",
-              title: "Adresse email vérifiée",
-              subtitle: "Sécurité du compte",
-              date: security.email_verified_at,
-              status: "vérifié",
-              statusLabel: "Vérifié",
-              details: "Adresse email confirmée"
-            }
-          ]
-        : []),
-      ...historyEntries.map((entry) => ({
-        id: `history-${entry.id}`,
-        category: entry.category,
-        title: entry.title,
-        subtitle: entry.subtitle,
-        date: entry.created_at,
-        status: entry.status,
-        statusLabel: entry.status,
-        details: entry.details
-      }))
-    ].sort((a, b) => new Date(b.date) - new Date(a.date));
-
     const accountHistory = [
       {
         id: "account-created",
@@ -315,13 +278,6 @@ export async function getMyHistory(req, res) {
       statusLabel: report.statut || "en_attente",
       details: report.description
     }));
-
-    const paginate = (total) => ({
-      page: limit > 0 ? 1 : 1,
-      limit,
-      total,
-      pages: Math.max(1, Math.ceil(total / limit))
-    });
 
     return res.json({
       history: {

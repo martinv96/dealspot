@@ -43,7 +43,7 @@ export default function RegisterPage() {
         password: form.password
       });
 
-      navigate("/connexion", {
+      navigate("/register", {
         state: {
           info:
             data?.message ||
@@ -150,7 +150,7 @@ export default function RegisterPage() {
           </button>
 
           <p className="auth-bottom">
-            Vous avez déjà un compte ? <Link to="/connexion">Se connecter</Link>
+            Vous avez déjà un compte ? <Link to="/login">Se connecter</Link>
           </p>
         </form>
       </main>

@@ -75,7 +75,7 @@ export default function UserProfilePage() {
     load();
   }, [id]);
 
-  const breadcrumbHome = isAuthenticated ? "/app" : "/";
+  const breadcrumbHome = "/";
 
   return (
     <div className="page-shell">

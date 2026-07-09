@@ -1,0 +1,148 @@
+/* messages - conversation */
+.messages-thread-card {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+}
+
+.messages-thread-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border-bottom: 1px solid #ececec;
+}
+
+.messages-thread-head strong {
+  display: block;
+  font-size: 1.05rem;
+}
+
+.messages-thread-head p {
+  font-size: 0.8rem;
+  color: #7d89a0;
+  margin-top: 2px;
+}
+
+.messages-annonce-link {
+  margin-top: 0;
+}
+
+.messages-thread-body {
+  padding: 12px;
+  overflow-y: auto;
+  max-height: 470px;
+  background: #fcfcfd;
+}
+
+.message-bubble-row {
+  display: flex;
+  margin-bottom: 10px;
+}
+
+.message-bubble-row.mine {
+  justify-content: flex-end;
+}
+
+.message-bubble {
+  position: relative;
+  max-width: 68%;
+  border-radius: 10px;
+  background: #eceff4;
+  padding: 9px 24px 7px 11px;
+}
+
+.message-bubble.mine {
+  background: linear-gradient(90deg, #2f6fd6, #14b667);
+  color: #fff;
+}
+
+.message-bubble p {
+  font-size: 0.86rem;
+  margin-bottom: 4px;
+}
+
+.message-bubble small {
+  font-size: 0.68rem;
+  opacity: 0.85;
+}
+
+.messages-delete-message-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  border: none;
+  background: transparent;
+  color: rgba(28, 41, 66, 0.4);
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.14s, color 0.14s, background 0.14s;
+}
+
+.message-bubble:hover .messages-delete-message-btn {
+  opacity: 1;
+}
+
+.messages-delete-message-btn:hover {
+  color: #d14a4a;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.message-bubble.mine .messages-delete-message-btn {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.message-bubble.mine .messages-delete-message-btn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.messages-thread-input {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  border-top: 1px solid #ececec;
+  padding: 10px 12px;
+}
+
+.messages-thread-input input {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+}
+
+.messages-thread-input .btn-contact {
+  width: 42px;
+  padding: 0;
+  margin: 0;
+}
+
+.messages-thread-empty {
+  min-height: 520px;
+  display: grid;
+  place-items: center;
+  color: #9ba7bb;
+  text-align: center;
+  gap: 6px;
+}
+
+.messages-thread-empty svg {
+  font-size: 2rem;
+}
+
+/* responsive */
+@media (max-width: 700px) {
+  .messages-thread-body {
+    max-height: 360px;
+  }
+
+  .message-bubble {
+    max-width: 90%;
+  }
+}

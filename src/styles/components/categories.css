@@ -1,3 +1,4 @@
+/* catégories (+boutons) */
 .categories-section {
   text-align: center;
   margin: 40px auto;
@@ -63,7 +64,7 @@
   margin-top: 12px;
 }
 
-/* Responsive adjustments */
+/* responsive */
 @media (max-width: 1000px) {
   .categories-grid {
     grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
@@ -91,14 +92,14 @@
 
 @media (max-width: 700px) {
   .categories-section {
-    margin: 30px auto;
-    padding: 20px 12px;
+    margin: 18px auto 8px;
+    padding: 14px 10px;
   }
 
   .categories-grid {
-    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px;
-    padding: 0 12px;
+    padding: 0 8px;
   }
 
   .categories-section h2 {
@@ -120,7 +121,7 @@
   }
 }
 
-/* Ultra-wide curved screen support */
+/* pour les très grand écrans */
 @media (min-width: 1850px) and (min-height: 850px) {
   .categories-section {
     margin: 50px auto;

@@ -30,10 +30,10 @@ export default function PublicHeader() {
         <Link to="/" className="nav-link" onClick={() => setIsMenuOpen(false)}>
           Accueil
         </Link>
-        <Link to="/connexion" className="btn btn-outline" onClick={() => setIsMenuOpen(false)}>
+        <Link to="/login" className="btn btn-outline" onClick={() => setIsMenuOpen(false)}>
           Connexion
         </Link>
-        <Link to="/inscription" className="btn btn-primary" onClick={() => setIsMenuOpen(false)}>
+        <Link to="/register" className="btn btn-primary" onClick={() => setIsMenuOpen(false)}>
           Inscription
         </Link>
       </nav>

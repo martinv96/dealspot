@@ -101,10 +101,10 @@ export default function HomePage() {
           </p>
 
           <div className="hero-actions">
-            <Link to="/inscription" className="btn btn-white-hero">
+            <Link to="/register" className="btn btn-white-hero">
               Créer un compte
             </Link>
-            <Link to="/connexion" className="btn btn-white-hero">
+            <Link to="/login" className="btn btn-white-hero">
               Se connecter
             </Link>
           </div>

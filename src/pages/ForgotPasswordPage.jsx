@@ -57,7 +57,7 @@ export default function ForgotPasswordPage() {
           </button>
 
           <p className="auth-bottom">
-            <Link to="/connexion">Retour a la connexion</Link>
+            <Link to="/login">Retour a la connexion</Link>
           </p>
         </form>
       </main>

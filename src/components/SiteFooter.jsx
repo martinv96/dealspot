@@ -33,8 +33,8 @@ export default function SiteFooter() {
         <div>
           <h4>Contact</h4>
           <ul>
-            <li>Email : contact@email.fr</li>
-            <li>Tel : 06 54 86 78 58</li>
+            <li>Email : dealspot-no-reply@email.fr</li>
+            <li>Tel : 07 86 77 26 78</li>
           </ul>
         </div>
       </div>

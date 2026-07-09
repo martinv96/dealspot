@@ -1,0 +1,98 @@
+/* annonces - cards produits + images + prix */
+.listing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.listing-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  position: relative;
+}
+
+.listing-card-link {
+  display: block;
+  color: inherit;
+}
+
+.badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  background: #58b158;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 14px;
+}
+
+.badge--active {
+  background: #58b158;
+}
+
+.badge--sold {
+  background: #e05959;
+}
+
+.badge--draft {
+  background: #8b8f9b;
+}
+
+.listing-image-wrap {
+  padding: 10px 10px 0;
+}
+
+.listing-image {
+  width: 100%;
+  height: 188px;
+  object-fit: contain;
+  object-position: center;
+  border-radius: 12px;
+  display: block;
+}
+
+.listing-content {
+  padding: 12px;
+}
+
+.listing-content h3 {
+  font-size: 1.6rem;
+  font-weight: 500;
+  margin-bottom: 7px;
+  min-height: 2.4em;
+}
+
+.price {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--blue-price);
+  margin-bottom: 8px;
+  line-height: 1;
+}
+
+.meta {
+  color: var(--text-soft);
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* responsive */
+@media (max-width: 1000px) {
+  .listing-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .listing-grid {
+    grid-template-columns: 1fr;
+  }
+}

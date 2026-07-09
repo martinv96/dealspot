@@ -1,0 +1,119 @@
+/* messages - espace liste conversation */
+.messages-list {
+  max-height: 560px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.messages-conversation-item {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid #efefef;
+  background: #fff;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 10px;
+  text-align: left;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+.messages-conversation-item:hover {
+  background: #f8fbff;
+}
+
+.messages-conversation-item.active {
+  background: #edf4ff;
+}
+
+.messages-conversation-avatar {
+  color: #97a6bf;
+  font-size: 1.7rem;
+  display: flex;
+  align-items: center;
+}
+
+.messages-conversation-body {
+  min-width: 0;
+}
+
+.messages-conversation-body strong {
+  display: block;
+  font-size: 0.88rem;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.messages-conversation-body span {
+  display: block;
+  font-size: 0.74rem;
+  color: #7f8da3;
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.messages-conversation-body p {
+  font-size: 0.8rem;
+  color: #334056;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.messages-conversation-meta {
+  font-size: 0.7rem;
+  color: #8c9ab1;
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+}
+
+.messages-delete-conversation-btn {
+  border: none;
+  background: transparent;
+  color: #b2bccd;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.14s, color 0.14s, background 0.14s;
+}
+
+.messages-conversation-item:hover .messages-delete-conversation-btn,
+.messages-conversation-item.active .messages-delete-conversation-btn {
+  opacity: 1;
+}
+
+.messages-delete-conversation-btn:hover {
+  color: #d14a4a;
+  background: #fff2f2;
+}
+
+.messages-conversation-meta em {
+  min-width: 16px;
+  height: 16px;
+  border-radius: 12px;
+  background: #2f6fd6;
+  color: #fff;
+  font-style: normal;
+  font-size: 0.65rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+/* responsive */
+@media (max-width: 700px) {
+  .messages-list {
+    max-height: 240px;
+  }
+}

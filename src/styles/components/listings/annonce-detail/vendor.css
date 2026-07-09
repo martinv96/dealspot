@@ -1,0 +1,27 @@
+/* toutes les annonces - espace vendeur */
+.annonce-vendeur-card {
+  padding: 12px;
+}
+
+.annonce-vendeur-card h3 {
+  font-size: 0.95rem;
+  margin-bottom: 8px;
+}
+
+.annonce-vendeur-row {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.annonce-vendeur-row svg {
+  font-size: 2rem;
+  color: #4a7dd2;
+}
+
+.annonce-vendeur-row p {
+  color: #7a7a7a;
+  font-size: 0.82rem;
+  margin-top: 4px;
+}

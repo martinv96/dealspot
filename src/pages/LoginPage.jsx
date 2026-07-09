@@ -31,7 +31,7 @@ export default function LoginPage() {
 
     try {
       await login(form);
-      navigate("/app");
+      navigate("/");
     } catch (err) {
       setError(err?.response?.data?.message || "Connexion impossible.");
     } finally {
@@ -83,7 +83,7 @@ export default function LoginPage() {
           </p>
 
           <p className="auth-bottom">
-            Vous n'avez pas de compte ? <Link to="/inscription">Créer un compte</Link>
+            Vous n'avez pas de compte ? <Link to="/register">Créer un compte</Link>
           </p>
         </form>
       </main>
