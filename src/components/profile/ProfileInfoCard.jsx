@@ -27,7 +27,7 @@ export default function ProfileInfoCard({
             name="pseudo"
             value={form.pseudo}
             onChange={onChange}
-            placeholder="Ex: Alain Dupont"
+            placeholder="Ex: Martin Vallée"
             readOnly={!isEditing}
           />
         </div>
@@ -39,7 +39,7 @@ export default function ProfileInfoCard({
             name="email"
             value={form.email}
             onChange={onChange}
-            placeholder="Ex: alaindupont@mail.fr"
+            placeholder="Ex: martinv@email.fr"
             readOnly={!isEditing}
           />
         </div>
@@ -63,7 +63,7 @@ export default function ProfileInfoCard({
             name="localisation"
             value={form.localisation}
             onChange={onChange}
-            placeholder="Ex: Paris 12eme"
+            placeholder="Ex: Paris 12ème"
             readOnly={!isEditing}
           />
         </div>

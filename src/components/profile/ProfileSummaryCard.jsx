@@ -7,7 +7,7 @@ export default function ProfileSummaryCard({ user, formatMemberSince, summaryLoa
         <FaUserCircle />
       </div>
 
-      <h2>{user?.pseudo || "Jean Dupont"}</h2>
+      <h2>{user?.pseudo || "Inconnu"}</h2>
       <p className="profile-member-since">
         {formatMemberSince(user?.date_inscription)}
       </p>

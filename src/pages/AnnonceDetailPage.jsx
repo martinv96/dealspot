@@ -464,7 +464,7 @@ export default function AnnonceDetailPage() {
                   </div>
                   <div className="annonce-location-note">
                     <strong>
-                      {displayedLocalisation || "Localisation non renseignee"}
+                      {displayedLocalisation || "Localisation non renseignée"}
                     </strong>
                     <p>
                       {mapStatus === "loading"
@@ -479,7 +479,7 @@ export default function AnnonceDetailPage() {
                       {mapStatus === "ok" ||
                       mapStatus === "idle" ||
                       mapStatus === "empty"
-                        ? "Remise en main propre a convenir entre acheteur et vendeur."
+                        ? "Remise en main propre (à convenir entre acheteur et vendeur)."
                         : null}
                     </p>
                   </div>
@@ -612,7 +612,7 @@ export default function AnnonceDetailPage() {
                           onClick={handleMarkAsSold}
                           disabled={isMarkingSold}
                         >
-                          {isMarkingSold ? "Mise a jour..." : "Marquer comme vendue"}
+                          {isMarkingSold ? "Mise à jour..." : "Marquer comme vendue"}
                         </button>
                       ) : null}
                       <button

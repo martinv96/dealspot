@@ -77,7 +77,7 @@ export default function RegisterPage() {
                 name="pseudo"
                 value={form.pseudo}
                 onChange={handleChange}
-                placeholder="Ex: Alain Dupont"
+                placeholder="Ex: Martin Vallée"
                 required
               />
             </div>
@@ -89,7 +89,7 @@ export default function RegisterPage() {
                 name="email"
                 value={form.email}
                 onChange={handleChange}
-                placeholder="Ex: alain.dupont@mail.fr"
+                placeholder="Ex: martinv@email.fr"
                 required
               />
             </div>
@@ -101,7 +101,7 @@ export default function RegisterPage() {
                 name="localisation"
                 value={form.localisation}
                 onChange={handleChange}
-                placeholder="Ex: Paris 12eme"
+                placeholder="Ex: Paris 12ème"
               />
             </div>
 
@@ -146,7 +146,7 @@ export default function RegisterPage() {
           {error && <div className="form-error">{error}</div>}
 
           <button className="btn btn-auth" disabled={loading} type="submit">
-            {loading ? "Creation..." : "Créer mon compte"}
+            {loading ? "Création..." : "Créer mon compte"}
           </button>
 
           <p className="auth-bottom">

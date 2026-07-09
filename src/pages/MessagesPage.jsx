@@ -359,7 +359,7 @@ export default function MessagesPage() {
                 <header className="messages-thread-head">
                   <div>
                     <strong>{selected.otherUser.pseudo}</strong>
-                    <p>{selected.annonce?.titre || "Conversation generale"}</p>
+                    <p>{selected.annonce?.titre || "Conversation générale"}</p>
                   </div>
                   {selected.annonce?.id ? (
                     <Link to={`/annonces/${selected.annonce.id}`} className="btn btn-outline messages-annonce-link">
@@ -414,7 +414,7 @@ export default function MessagesPage() {
             ) : (
               <div className="messages-thread-empty">
                 <FaRegCommentDots />
-                <p>Selectionnez une conversation a gauche.</p>
+                <p>Selectionnez une conversation à gauche.</p>
               </div>
             )}
           </section>

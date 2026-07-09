@@ -26,7 +26,7 @@ export default function ResetPasswordPage() {
     setSuccess("");
 
     if (!token) {
-      setError("Le token de reinitialisation est manquant.");
+      setError("Le token de réinitialisation est manquant.");
       return;
     }
 
@@ -47,10 +47,10 @@ export default function ResetPasswordPage() {
         newPassword: form.newPassword,
         confirmPassword: form.confirmPassword
       });
-      setSuccess(data?.message || "Mot de passe reinitialise avec succes.");
+      setSuccess(data?.message || "Mot de passe réinitialisé avec succès.");
       setForm({ newPassword: "", confirmPassword: "" });
     } catch (requestError) {
-      setError(requestError?.response?.data?.message || "Reinitialisation impossible.");
+      setError(requestError?.response?.data?.message || "Réinitialisation impossible.");
     } finally {
       setLoading(false);
     }
@@ -62,7 +62,7 @@ export default function ResetPasswordPage() {
 
       <main className="page-main auth-main">
         <form className="auth-card auth-card-wide" onSubmit={handleSubmit}>
-          <h3>Reinitialiser le mot de passe</h3>
+          <h3>Réinitialiser le mot de passe</h3>
           <p>Choisissez votre nouveau mot de passe.</p>
 
           <label>Nouveau mot de passe</label>
@@ -89,11 +89,11 @@ export default function ResetPasswordPage() {
           {success ? <p className="form-success">{success}</p> : null}
 
           <button className="btn btn-auth" disabled={loading} type="submit">
-            {loading ? "Reinitialisation..." : "Reinitialiser"}
+            {loading ? "Reinitialisation..." : "Réinitialiser"}
           </button>
 
           <p className="auth-bottom">
-            <Link to="/connexion">Retour a la connexion</Link>
+            <Link to="/connexion">Retour à la connexion</Link>
           </p>
         </form>
       </main>
