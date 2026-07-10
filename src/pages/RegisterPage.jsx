@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import PublicHeader from "../components/PublicHeader";
 import SiteFooter from "../components/SiteFooter";
 import { useAuth } from "../context/useAuth";
@@ -7,7 +7,6 @@ import { validateRegisterForm } from "../utils/validation";
 
 export default function RegisterPage() {
   const { register } = useAuth();
-  const navigate = useNavigate();
 
   const [form, setForm] = useState({
     pseudo: "",
@@ -19,6 +18,7 @@ export default function RegisterPage() {
   });
 
   const [error, setError] = useState("");
+  const [infoMessage, setInfoMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
   function handleChange(e) {
@@ -27,6 +27,8 @@ export default function RegisterPage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    setInfoMessage("");
+
     const nextError = validateRegisterForm(form);
     setError(nextError);
     if (nextError) {
@@ -42,14 +44,11 @@ export default function RegisterPage() {
         role: form.role,
         password: form.password
       });
-
-      navigate("/register", {
-        state: {
-          info:
-            data?.message ||
-            "Inscription réussie. Vérifiez votre boîte mail et cliquez sur le lien de vérification avant de vous connecter."
-        }
-      });
+      setError("");
+      setInfoMessage(
+        data?.message ||
+          "Inscription réussie. Vérifiez votre boîte mail et cliquez sur le lien de vérification avant de vous connecter."
+      );
     } catch (err) {
       setError(err?.response?.data?.message || "Inscription impossible.");
     } finally {
@@ -143,6 +142,7 @@ export default function RegisterPage() {
             </div>
           </div>
 
+          {infoMessage && <div className="form-success">{infoMessage}</div>}
           {error && <div className="form-error">{error}</div>}
 
           <button className="btn btn-auth" disabled={loading} type="submit">

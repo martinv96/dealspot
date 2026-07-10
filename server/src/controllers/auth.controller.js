@@ -302,6 +302,9 @@ export async function getMyHistory(req, res) {
 export async function register(req, res) {
   try {
     const { pseudo, email, password, localisation, role } = req.validatedBody || req.body;
+    const normalizedEmail = String(email || "").trim().toLowerCase();
+    const configuredMailTimeout = Number.parseInt(process.env.SMTP_SEND_TIMEOUT_MS || "", 10);
+    const mailTimeoutMs = Number.isNaN(configuredMailTimeout) ? 45000 : Math.max(1000, configuredMailTimeout);
 
     if (!isPasswordSecure(password)) {
       return res.status(400).json({
@@ -309,8 +312,20 @@ export async function register(req, res) {
       });
     }
 
-    const existing = await User.findOne({ where: { email } });
+    const existing = await User.findOne({ where: { email: normalizedEmail } });
     if (existing) {
+      const existingSecurity = await UserSecurity.findOne({
+        where: { user_id: existing.id },
+        attributes: ["email_verified"]
+      });
+
+      if (existingSecurity && !existingSecurity.email_verified) {
+        return res.status(409).json({
+          message:
+            "Un compte existe déjà avec cet email mais il n'est pas encore vérifié. Consultez votre boîte mail pour activer votre compte."
+        });
+      }
+
       return res.status(409).json({ message: "Cet email est déjà utilisé." });
     }
 
@@ -322,13 +337,13 @@ export async function register(req, res) {
 
     const user = await User.create({
       pseudo,
-      email,
+      email: normalizedEmail,
       mot_de_passe: hashedPassword,
       localisation: localisation || null,
       role: finalRole
     });
 
-    await ensureUserSecurity(user.id, { email_verified: true });
+    await ensureUserSecurity(user.id, { email_verified: false });
 
     let verificationEmailAvailable = true;
 
@@ -341,7 +356,7 @@ export async function register(req, res) {
           pseudo: user.pseudo,
           token: verifyToken
         }),
-        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout SMTP")), 4000))
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout SMTP")), mailTimeoutMs))
       ]);
 
       if (mailResult?.sent === false) {
@@ -410,7 +425,7 @@ export async function login(req, res) {
 
 export async function verifyEmail(req, res) {
   try {
-    const token = String(req.query.token || "").trim();
+    const token = String(req.query.token || "").trim().replace(/\s+/g, "");
     if (!token) {
       return res.status(400).json({ message: "Token de vérification manquant." });
     }

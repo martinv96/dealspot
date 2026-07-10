@@ -93,7 +93,7 @@ export default function ResetPasswordPage() {
           </button>
 
           <p className="auth-bottom">
-            <Link to="/connexion">Retour à la connexion</Link>
+            <Link to="/login">Retour à la connexion</Link>
           </p>
         </form>
       </main>

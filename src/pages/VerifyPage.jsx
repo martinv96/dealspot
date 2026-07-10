@@ -52,7 +52,7 @@ export default function VerifyPage() {
           {status === "success" ? <p className="form-success">{message}</p> : null}
 
           <p className="auth-bottom">
-            <Link to="/connexion">Retour à la connexion</Link>
+            <Link to="/login">Retour à la connexion</Link>
           </p>
         </div>
       </main>

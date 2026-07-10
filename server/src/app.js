@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import { DataTypes } from "sequelize";
 import path from "path";
+import dns from "node:dns";
 import { fileURLToPath } from "url";
 import "./config/env.js";
 import { sequelize } from "./config/database.js";
@@ -14,6 +15,10 @@ import adminRoutes from "./routes/admin.routes.js";
 import "./models/index.js";
 import connectMongo from './config/mongo.js';
 import contactRoutes from './routes/contact.routes.js';
+
+if (String(process.env.DNS_RESULT_ORDER || "ipv4first").toLowerCase() === "ipv4first") {
+  dns.setDefaultResultOrder("ipv4first");
+}
 
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
