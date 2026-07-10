@@ -65,9 +65,13 @@ function createTransporter(config) {
     host: config.host,
     port: config.port,
     secure: Boolean(config.secure),
+    family: 4,
     auth: {
       user: config.user,
       pass: config.pass
+    },
+    tls: {
+      rejectUnauthorized: false
     }
   });
 }
