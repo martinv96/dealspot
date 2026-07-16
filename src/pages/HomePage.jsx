@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import CategoryExplorerSection from "../components/CategoryExplorerSection";
 import PublicHeader from "../components/PublicHeader";
 import SiteFooter from "../components/SiteFooter";
 import ProductGrid from "../components/ProductGrid";
@@ -42,15 +43,6 @@ function mapAnnonceToCard(annonce) {
   };
 }
 
-const CATEGORIES = [
-  { value: "meubles", label: "Meubles", icon: "🪑" },
-  { value: "electronique", label: "Électronique", icon: "📱" },
-  { value: "mode", label: "Mode", icon: "👕" },
-  { value: "sport", label: "Sport", icon: "⚽" },
-  { value: "jeux-loisirs", label: "Jeux & Loisirs", icon: "🎮" },
-  { value: "autres", label: "Autres", icon: "📦" }
-];
-
 export default function HomePage() {
   const [annonces, setAnnonces] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -77,16 +69,17 @@ export default function HomePage() {
   }, []);
 
   const cards = useMemo(() => annonces.map(mapAnnonceToCard), [annonces]);
-  
   const filteredCards = useMemo(() => {
-    if (!selectedCategory) return cards;
-    return cards.filter(card => {
-      const annonce = annonces.find(a => a.id === card.id);
+    if (!selectedCategory) {
+      return cards;
+    }
+
+    return cards.filter((card) => {
+      const annonce = annonces.find((item) => item.id === card.id);
       return annonce && annonce.categorie === selectedCategory;
     });
-  }, [cards, selectedCategory, annonces]);
-  
-  const recentCards = useMemo(() => filteredCards.slice(0, 3), [filteredCards]);
+  }, [annonces, cards, selectedCategory]);
+  const recentCards = useMemo(() => filteredCards.slice(0, 6), [filteredCards]);
 
   return (
     <div className="page-shell">
@@ -110,29 +103,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="section categories-section">
-          <h2>Explorer par catégorie</h2>
-          <div className="categories-grid">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat.value}
-                className={`category-btn ${selectedCategory === cat.value ? "active" : ""}`}
-                onClick={() => setSelectedCategory(cat.value)}
-              >
-                <span className="category-icon">{cat.icon}</span>
-                <span className="category-label">{cat.label}</span>
-              </button>
-            ))}
-          </div>
-          {selectedCategory && (
-            <button 
-              className="btn btn-outline category-reset-btn"
-              onClick={() => setSelectedCategory(null)}
-            >
-              Réinitialiser les filtres
-            </button>
-          )}
-        </section>
+        <CategoryExplorerSection selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} />
 
         <section className="section listings-section">
           <div className="section-head">

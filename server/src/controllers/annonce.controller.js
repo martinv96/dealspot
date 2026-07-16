@@ -1,6 +1,6 @@
 import db from "../models/index.js";
 import jwt from "jsonwebtoken";
-import { Op } from "sequelize";
+import { Op, col, fn } from "sequelize";
 import { deleteImagesByUrls, uploadImages } from "../services/cloudinary.service.js";
 
 // ce controller gère le cycle de vie d'une annonce côté utilisateur
@@ -211,21 +211,64 @@ export const listMyAnnonces = async (req, res) => {
       return res.status(401).json({ message: "Token invalide." });
     }
 
-    const limit = parseLimit(req.query.limit, 50);
-    const statut = req.query.statut;
+    const limit = parseLimit(req.query.limit, 12);
+    const page = parsePage(req.query.page, 1);
+    const offset = (page - 1) * limit;
+    const statut = typeof req.query.statut === "string" ? req.query.statut.trim() : "";
     const where = { user_id: req.user.id };
 
     if (statut) {
       where.statut = statut;
     }
 
-    const annonces = await Annonce.findAll({
+    const [annonces, statusRows, totalCount] = await Promise.all([
+      Annonce.findAll({
       where,
       order: [["date_publication", "DESC"]],
-      limit
-    });
+      limit,
+      offset
+      }),
+      Annonce.findAll({
+        where: { user_id: req.user.id },
+        attributes: ["statut", [fn("COUNT", col("id")), "count"]],
+        group: ["statut"],
+        raw: true
+      }),
+      Annonce.count({ where })
+    ]);
 
-    res.json({ annonces: annonces.map(serializeAnnonce) });
+    const counts = statusRows.reduce(
+      (acc, row) => {
+        const count = Number(row.count || 0);
+
+        if (row.statut === "expirée" || row.statut === "expiree") {
+          return { ...acc, vendues: count };
+        }
+
+        if (row.statut === "active") {
+          return { ...acc, active: count };
+        }
+
+        if (row.statut === "brouillon") {
+          return { ...acc, brouillon: count };
+        }
+
+        return acc;
+      },
+      {
+        active: 0,
+        vendues: 0,
+        brouillon: 0
+      }
+    );
+
+    res.json({
+      annonces: annonces.map(serializeAnnonce),
+      page,
+      total: totalCount,
+      pages: Math.max(1, Math.ceil(totalCount / limit)),
+      counts
+    });
   } catch (error) {
     console.error("Erreur listMyAnnonces:", error);
     res.status(500).json({ message: "Erreur récupération de vos annonces", error: error.message });

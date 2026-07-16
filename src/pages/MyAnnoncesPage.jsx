@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import PrivateHeader from "../components/PrivateHeader";
+import PaginationControls from "../components/PaginationControls";
 import ProductGrid from "../components/ProductGrid";
 import SiteFooter from "../components/SiteFooter";
 import api from "../services/api";
@@ -52,17 +53,37 @@ function mapAnnonceToCard(annonce) {
 
 export default function MyAnnoncesPage() {
   const [annonces, setAnnonces] = useState([]);
+  const [counts, setCounts] = useState({ active: 0, vendues: 0, brouillon: 0 });
   const [activeTab, setActiveTab] = useState("active");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const statusByTab = {
+    active: "active",
+    vendues: "expirée",
+    brouillon: "brouillon"
+  };
 
   useEffect(() => {
     async function loadMyAnnonces() {
       try {
         setIsLoading(true);
         setError("");
-        const response = await api.get("/annonces/me", { params: { limit: 200 } });
+        const response = await api.get("/annonces/me", {
+          params: {
+            limit: 10,
+            page: currentPage,
+            statut: statusByTab[activeTab]
+          }
+        });
         setAnnonces(response.data?.annonces || []);
+        setCounts(response.data?.counts || { active: 0, vendues: 0, brouillon: 0 });
+        setCurrentPage(Number(response.data?.page || 1));
+        setTotalPages(Number(response.data?.pages || 1));
+        setTotalItems(Number(response.data?.total || 0));
       } catch (loadError) {
         setError(loadError?.response?.data?.message || "Impossible de charger vos annonces.");
       } finally {
@@ -71,28 +92,21 @@ export default function MyAnnoncesPage() {
     }
 
     loadMyAnnonces();
-  }, []);
-
-  const counts = useMemo(() => {
-    return {
-      active: annonces.filter((annonce) => annonce.statut === "active").length,
-      vendues: annonces.filter((annonce) => annonce.statut === "expirée").length,
-      brouillon: annonces.filter((annonce) => annonce.statut === "brouillon").length
-    };
-  }, [annonces]);
+  }, [activeTab, currentPage]);
 
   const filteredCards = useMemo(() => {
-    const statusMap = {
-      active: "active",
-      vendues: "expirée",
-      brouillon: "brouillon"
-    };
+    return annonces.map(mapAnnonceToCard);
+  }, [annonces]);
 
-    const selectedStatus = statusMap[activeTab];
-    return annonces
-      .filter((annonce) => annonce.statut === selectedStatus)
-      .map(mapAnnonceToCard);
-  }, [activeTab, annonces]);
+  function handleTabChange(tab) {
+    setActiveTab(tab);
+    setCurrentPage(1);
+  }
+
+  function goToPage(page) {
+    const nextPage = Math.max(1, Math.min(page, totalPages));
+    setCurrentPage(nextPage);
+  }
 
   return (
     <div className="page-shell">
@@ -114,21 +128,21 @@ export default function MyAnnoncesPage() {
           <button
             type="button"
             className={"mes-tab" + (activeTab === "active" ? " active" : "")}
-            onClick={() => setActiveTab("active")}
+            onClick={() => handleTabChange("active")}
           >
             Actives ({counts.active})
           </button>
           <button
             type="button"
             className={"mes-tab" + (activeTab === "vendues" ? " active" : "")}
-            onClick={() => setActiveTab("vendues")}
+            onClick={() => handleTabChange("vendues")}
           >
             Vendues ({counts.vendues})
           </button>
           <button
             type="button"
             className={"mes-tab" + (activeTab === "brouillon" ? " active" : "")}
-            onClick={() => setActiveTab("brouillon")}
+            onClick={() => handleTabChange("brouillon")}
           >
             Brouillons ({counts.brouillon})
           </button>
@@ -139,7 +153,17 @@ export default function MyAnnoncesPage() {
 
         {!isLoading && !error ? (
           <section className="section listings-section mes-annonces-list">
+            <div className="section-head">
+              <h2>{activeTab === "active" ? "Annonces actives" : activeTab === "vendues" ? "Annonces vendues" : "Annonces brouillon"}</h2>
+              <p>{totalItems} annonce(s)</p>
+            </div>
             <ProductGrid items={filteredCards} showBadge />
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPrevious={() => goToPage(currentPage - 1)}
+              onNext={() => goToPage(currentPage + 1)}
+            />
           </section>
         ) : null}
       </main>
