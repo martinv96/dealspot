@@ -5,12 +5,15 @@ import { Op } from "sequelize";
 import db from "../models/index.js";
 import { sendResetPasswordEmail, sendVerificationEmail } from "../services/mail.service.js";
 
+// ce controller concentre inscription, connexion, verification email et historique utilisateur
+
 const User = db.User;
 const UserSecurity = db.UserSecurity;
 const AuthToken = db.AuthToken;
 const UserHistory = db.UserHistory;
 
 function isPasswordSecure(password) {
+  // règle de sécurité minimale utilisée à l'inscription et au reset
   const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
   return regex.test(password);
 }
@@ -53,6 +56,7 @@ async function ensureUserSecurity(userId, defaults = {}) {
 }
 
 async function issueAuthToken(userId, type, expiresInMs) {
+  // un seul token actif par type pour limiter les usages multiples
   const plainToken = generatePlainToken();
   const tokenHash = hashToken(plainToken);
   const expiresAt = new Date(Date.now() + expiresInMs);
@@ -102,6 +106,7 @@ async function findAuthTokenByHash(plainToken, type) {
 }
 
 async function recordHistory(userId, category, title, subtitle, status = "succès", details = null) {
+  // historique unifié affiché sur la page profil
   await UserHistory.create({
     user_id: userId,
     category,
@@ -114,6 +119,8 @@ async function recordHistory(userId, category, title, subtitle, status = "succè
 
 export async function getUserPublicProfile(req, res) {
   try {
+    // but: exposer une fiche publique minimale d'un utilisateur
+    // utile pour les pages vendeur sans exposer de données sensibles
     const userId = Number.parseInt(req.params.id, 10);
     if (Number.isNaN(userId)) {
       return res.status(400).json({ message: "ID utilisateur invalide." });
@@ -136,6 +143,8 @@ export async function getUserPublicProfile(req, res) {
 
 export async function getMyHistory(req, res) {
   try {
+    // but: fournir un historique unifié du compte connecté
+    // on agrège plusieurs sources pour éviter plusieurs appels côté front
     const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ message: "Token invalide." });
@@ -301,6 +310,8 @@ export async function getMyHistory(req, res) {
 
 export async function register(req, res) {
   try {
+    // but: créer un compte et initier la vérification email
+    // même si l'email échoue, l'inscription reste validée
     const { pseudo, email, password, localisation, role } = req.validatedBody || req.body;
     const normalizedEmail = String(email || "").trim().toLowerCase();
     const configuredMailTimeout = Number.parseInt(process.env.SMTP_SEND_TIMEOUT_MS || "", 10);
@@ -382,6 +393,8 @@ export async function register(req, res) {
 
 export async function login(req, res) {
   try {
+    // but: authentifier l'utilisateur et générer un jwt session
+    // on bloque la connexion si email non vérifié ou compte bloqué
     const { email, password } = req.validatedBody || req.body;
 
     const user = await User.findOne({ where: { email } });
@@ -425,6 +438,8 @@ export async function login(req, res) {
 
 export async function verifyEmail(req, res) {
   try {
+    // but: valider l'adresse email avec un token one-shot
+    // si le token a déjà servi, on évite de renvoyer une erreur confuse
     const token = String(req.query.token || "").trim().replace(/\s+/g, "");
     if (!token) {
       return res.status(400).json({ message: "Token de vérification manquant." });
@@ -461,6 +476,8 @@ export async function verifyEmail(req, res) {
 
 export async function forgotPassword(req, res) {
   try {
+    // but: lancer un reset password sans fuite d'information utilisateur
+    // la réponse est toujours la même pour éviter l'énumération d'emails
     const { email } = req.validatedBody || req.body;
 
     const user = await User.findOne({ where: { email } });
@@ -488,6 +505,8 @@ export async function forgotPassword(req, res) {
 
 export async function resetPassword(req, res) {
   try {
+    // but: appliquer un nouveau mot de passe via token temporaire
+    // le token est invalidé immédiatement après usage
     const { token, newPassword } = req.validatedBody || req.body;
 
     if (!isPasswordSecure(newPassword)) {
@@ -522,6 +541,7 @@ export async function resetPassword(req, res) {
 
 export async function me(req, res) {
   try {
+    // but: retourner le profil courant utilisé pour hydrater le front
     const user = await User.findByPk(req.user.id, {
       include: [
         {
@@ -551,6 +571,8 @@ export async function me(req, res) {
 
 export async function updateMe(req, res) {
   try {
+    // but: mise à jour des informations de profil du compte courant
+    // on conserve le contrôle d'unicité email côté backend
     const { pseudo, email, telephone, localisation } = req.validatedBody || req.body;
     const user = await User.findByPk(req.user.id);
 
@@ -596,6 +618,8 @@ export async function updateMe(req, res) {
 
 export async function changePassword(req, res) {
   try {
+    // but: changement sécurisé du mot de passe utilisateur
+    // vérifie l'ancien mot de passe avant de persister le nouveau hash
     const { currentPassword, newPassword } = req.validatedBody || req.body;
     const user = await User.findByPk(req.user.id);
 

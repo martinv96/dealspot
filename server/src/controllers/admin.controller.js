@@ -2,6 +2,8 @@ import { Op, fn, col } from "sequelize";
 import db from "../models/index.js";
 import { deleteImagesByUrls } from "../services/cloudinary.service.js";
 
+// ce controller regroupe les actions d'administration: modération annonces, gestion users et stats
+
 const MAX_LIMIT = 50;
 
 const User = db.User;
@@ -13,6 +15,7 @@ const Report = db.Report;
 const Favorite = db.Favorite;
 
 function parseLimit(rawLimit, fallback = 20) {
+  // petit helper commun pour garder une pagination bornée
   const parsed = Number.parseInt(rawLimit, 10);
   if (Number.isNaN(parsed) || parsed <= 0) {
     return fallback;
@@ -21,6 +24,7 @@ function parseLimit(rawLimit, fallback = 20) {
 }
 
 function parsePage(rawPage, fallback = 1) {
+  // évite les pages negatives ou invalides
   const parsed = Number.parseInt(rawPage, 10);
   if (Number.isNaN(parsed) || parsed <= 0) {
     return fallback;
@@ -29,6 +33,7 @@ function parsePage(rawPage, fallback = 1) {
 }
 
 function normalizeImages(rawImages) {
+  // convertit les formats possibles en tableau d'urls propres
   if (Array.isArray(rawImages)) {
     return rawImages.filter((value) => typeof value === "string" && value.trim());
   }
@@ -54,6 +59,7 @@ function normalizeImages(rawImages) {
 }
 
 function toAnnonceDto(annonce) {
+  // on normalise le format des images pour éviter les variations json/string
   const raw = typeof annonce?.toJSON === "function" ? annonce.toJSON() : annonce;
   return {
     ...raw,
@@ -62,6 +68,7 @@ function toAnnonceDto(annonce) {
 }
 
 function toUserDto(user) {
+  // on retourne un dto stable pour le front admin
   const raw = typeof user?.toJSON === "function" ? user.toJSON() : user;
   const security = raw.security || null;
 
@@ -82,6 +89,10 @@ function toUserDto(user) {
 
 export async function adminListAnnonces(req, res) {
   try {
+    // but: fournir la liste admin des annonces avec filtres cumulables
+    // 1) on lit et normalise les paramètres de pagination/filtre
+    // 2) on construit un where sequelize dynamique
+    // 3) on renvoie un payload paginé prêt pour le tableau admin
     const page = parsePage(req.query.page, 1);
     const limit = parseLimit(req.query.limit, 20);
     const offset = (page - 1) * limit;
@@ -141,6 +152,10 @@ export async function adminListAnnonces(req, res) {
 
 export async function adminUpdateAnnonce(req, res) {
   try {
+    // but: permettre à un admin de corriger une annonce sans contrainte de propriétaire
+    // 1) validation de l'id
+    // 2) chargement de l'annonce
+    // 3) patch partiel des champs présents dans le body
     const annonceId = Number.parseInt(req.params.id, 10);
     if (Number.isNaN(annonceId)) {
       return res.status(400).json({ message: "ID annonce invalide." });
@@ -174,6 +189,8 @@ export async function adminUpdateAnnonce(req, res) {
 
 export async function adminDeleteAnnonce(req, res) {
   try {
+    // but: suppression complète d'une annonce par admin
+    // on nettoie les assets cloud puis on supprime la ligne sql
     const annonceId = Number.parseInt(req.params.id, 10);
     if (Number.isNaN(annonceId)) {
       return res.status(400).json({ message: "ID annonce invalide." });
@@ -196,6 +213,10 @@ export async function adminDeleteAnnonce(req, res) {
 
 export async function adminListUsers(req, res) {
   try {
+    // but: lister les comptes avec des filtres de modération
+    // 1) on prépare les filtres texte/role/blocked
+    // 2) on joint les infos de sécurité
+    // 3) on renvoie un dto cohérent pour l'ui admin
     const page = parsePage(req.query.page, 1);
     const limit = parseLimit(req.query.limit, 20);
     const offset = (page - 1) * limit;
@@ -249,6 +270,10 @@ export async function adminListUsers(req, res) {
 
 export async function adminSetUserBlock(req, res) {
   try {
+    // but: bloquer ou débloquer un compte sans supprimer ses données
+    // 1) on interdit l'auto-blocage de l'admin courant
+    // 2) on crée le profil security s'il n'existe pas
+    // 3) on persiste l'état et la raison de blocage
     const targetId = Number.parseInt(req.params.id, 10);
     if (Number.isNaN(targetId)) {
       return res.status(400).json({ message: "ID utilisateur invalide." });
@@ -296,6 +321,8 @@ export async function adminSetUserBlock(req, res) {
 }
 
 export async function adminDeleteUser(req, res) {
+  // but: suppression profonde d'un utilisateur et de ses dépendances
+  // on passe par une transaction pour garantir tout ou rien
   const transaction = await db.sequelize.transaction();
 
   try {
@@ -325,6 +352,7 @@ export async function adminDeleteUser(req, res) {
 
     const annonceIds = annonces.map((item) => item.id);
 
+    // étape 1: suppression des dépendances rattachées aux annonces de cet utilisateur
     if (annonceIds.length > 0) {
       await Favorite.destroy({ where: { annonce_id: { [Op.in]: annonceIds } }, transaction });
       await Message.destroy({ where: { annonce_id: { [Op.in]: annonceIds } }, transaction });
@@ -332,6 +360,7 @@ export async function adminDeleteUser(req, res) {
       await Annonce.destroy({ where: { id: { [Op.in]: annonceIds } }, transaction });
     }
 
+    // étape 2: suppression des dépendances liées au compte utilisateur
     await Favorite.destroy({ where: { user_id: targetId }, transaction });
     await Report.destroy({ where: { user_id: targetId }, transaction });
     await Message.destroy({ where: { [Op.or]: [{ sender_id: targetId }, { receiver_id: targetId }] }, transaction });
@@ -349,6 +378,7 @@ export async function adminDeleteUser(req, res) {
 }
 
 function mapGroupedResult(rows, keyField) {
+  // transforme un résultat group by sequelize en objet clé -> valeur
   return rows.reduce((acc, row) => {
     const key = row[keyField];
     acc[key] = Number(row.count || 0);
@@ -358,6 +388,8 @@ function mapGroupedResult(rows, keyField) {
 
 export async function adminStats(req, res) {
   try {
+    // but: alimenter le dashboard avec des compteurs agrégés
+    // on exécute les requêtes en parallèle pour limiter le temps de réponse
     const [
       usersTotal,
       usersBlocked,
