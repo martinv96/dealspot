@@ -291,12 +291,10 @@ export const updateMyAnnonce = async (req, res) => {
     if (annonce.user_id !== req.user.id) {
       return res.status(403).json({ message: "Modification non autorisée." });
     }
-
     // On récupère 'existingImages' depuis le body (envoyé par le front)
     const { titre, description, prix, categorie, localisation, statut, existingImages } = req.validatedBody || req.body;
     const newUploadedImages = await getUploadedImageUrls(req);
     const currentImages = normalizeImages(annonce.images);
-
     // Mise à jour des champs textes
     annonce.titre = titre ?? annonce.titre;
     annonce.description = description ?? annonce.description;
@@ -304,11 +302,9 @@ export const updateMyAnnonce = async (req, res) => {
     annonce.categorie = categorie ?? annonce.categorie;
     annonce.localisation = localisation ?? annonce.localisation;
     annonce.statut = statut ?? annonce.statut;
-
     // GESTION DES IMAGES
     let finalImages = [];
-
-    // 1. On prend les images que le front nous dit de garder
+          // 1. On prend les images que le front nous dit de garder
     if (existingImages !== undefined) {
       // Si existingImages est envoyé via FormData, c'est parfois une string JSON, on la parse
       if (typeof existingImages === "string") {
@@ -324,16 +320,13 @@ export const updateMyAnnonce = async (req, res) => {
       // Si le front n'envoie rien du tout, on garde les images actuelles (meme si stockees en string JSON)
       finalImages = normalizeImages(annonce.images);
     }
-
     // 2. On ajoute les nouvelles photos uploadées
     if (newUploadedImages.length > 0) {
       finalImages = [...finalImages, ...newUploadedImages];
     }
-
     // 3. On applique la limite de 5 et on enregistre
     annonce.images = sanitizeImages(finalImages.slice(0, 5));
-
-    // 4. Nettoyage des images retirées (Cloudinary uniquement, no-op en local)
+   // 4. Nettoyage des images retirées (Cloudinary uniquement, no-op en local)
     const removedImages = currentImages.filter((imageUrl) => !annonce.images.includes(imageUrl));
     await deleteImagesByUrls(removedImages);
 

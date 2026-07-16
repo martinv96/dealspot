@@ -26,7 +26,7 @@ export default function SiteFooter() {
             <Link to="/">Accueil</Link>
             <Link to="/apropos">A propos</Link>
             <Link to="/contact">Contactez-nous</Link>
-            <li>Conditions générales de vente</li>
+            <Link to="/cgv">Conditions générales de vente</Link>
           </ul>
         </div>
 
@@ -34,7 +34,7 @@ export default function SiteFooter() {
           <h4>Contact</h4>
           <ul>
             <li>Email : dealspot-no-reply@email.fr</li>
-            <li>Tel : 07 86 77 26 78</li>
+            <li>Tel : 07 86 75 45 62</li>
           </ul>
         </div>
       </div>

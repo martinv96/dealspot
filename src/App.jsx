@@ -19,6 +19,7 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import AProposPage from "./pages/AProposPage";
 import ContactPage from "./pages/ContactPage";
 import AdminPage from "./pages/AdminPage";
+import CgvPage from "./pages/CgvPage";
 
 const DEFAULT_SEO = {
   title: "DealSpot - Petites annonces locales",
@@ -200,6 +201,7 @@ export default function App() {
         <Route path="/annonces" element={<AllAnnoncesPage />} />
         <Route path="/annonces/:id" element={<AnnonceDetailPage />} />
         <Route path="/vendeurs/:id" element={<UserProfilePage />} />
+        <Route path="/cgv" element={<CgvPage />} />
         <Route
           path="/favoris"
           element={

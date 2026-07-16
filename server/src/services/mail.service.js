@@ -1,15 +1,15 @@
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 
-// Utilisation du package historique officiel recommandé par la doc Brevo
+// utilisation du package historique officiel (selon doc Brevo)
 const SibApiV3Sdk = require('sib-api-v3-sdk');
 
-// Configuration du client d'API selon la doc Brevo
+// configuration du client d'API (selon doc Brevo)
 const defaultClient = SibApiV3Sdk.ApiClient.instance;
 const apiKey = defaultClient.authentications['api-key'];
-apiKey.apiKey = process.env.BREVO_API_KEY; // <--- Mets ici ta clé de l'onglet "Clés API" (...OCzNGT)
+apiKey.apiKey = process.env.BREVO_API_KEY;
 
-// Instanciation du client pour les emails transactionnels
+// instanciation du client pour les emails
 const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
 
 function getMailConfig() {
