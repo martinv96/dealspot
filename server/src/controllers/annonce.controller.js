@@ -404,4 +404,44 @@ export const updateMyAnnonce = async (req, res) => {
     console.error("Erreur updateMyAnnonce:", error);
     return res.status(500).json({ message: "Erreur modification annonce.", error: error.message });
   }
+}
+export const publishAnnonce = async (req, res) => {
+  try {
+    // 1. Je vérifie que l'utilisateur est bien connecté
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: "Token invalide." });
+    }
+
+    const annonceId = Number.parseInt(req.params.id, 10);
+    const annonce = await Annonce.findByPk(annonceId);
+
+    if (!annonce) {
+      return res.status(404).json({ message: "Annonce introuvable." });
+    }
+
+    // 2. Je vérifie que l'utilisateur connecté est bien le propriétaire de l'annonce
+    if (annonce.user_id !== req.user.id) {
+      return res.status(403).json({ message: "Action non autorisée." });
+    }
+
+    // 3. SÉCURITÉ CRITIQUE : Je m'assure que l'annonce est bien un brouillon au départ
+    // Si elle est déjà active, ou archivée, ou bloquée par la modération, je refuse l'opération.
+    if (annonce.statut !== "brouillon") {
+      return res.status(400).json({ 
+        message: "Seules les annonces en mode brouillon peuvent être publiées." 
+      });
+    }
+
+    // 4. Si tous les feux sont au vert, je passe le statut à "active" et je sauvegarde
+    annonce.statut = "active";
+    await annonce.save();
+
+    return res.json({ 
+      message: "Votre annonce a été publiée avec succès !", 
+      annonce: serializeAnnonce(annonce) 
+    });
+  } catch (error) {
+    console.error("Erreur publishAnnonce:", error);
+    return res.status(500).json({ message: "Erreur lors de la publication." });
+};
 };

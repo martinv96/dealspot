@@ -24,7 +24,12 @@ import { useAuth } from "../context/useAuth";
 import { useAnnonceLocation } from "../hooks/useAnnonceLocation";
 import { useFavorites } from "../hooks/useFavorites";
 import api from "../services/api";
-import { cleanImages, FALLBACK_IMAGE, formatDate, formatPrice } from "../utils/annonceDetail";
+import {
+  cleanImages,
+  FALLBACK_IMAGE,
+  formatDate,
+  formatPrice,
+} from "../utils/annonceDetail";
 
 export default function AnnonceDetailPage() {
   const { id } = useParams();
@@ -108,15 +113,13 @@ export default function AnnonceDetailPage() {
     }
   }, [activeImageIndex, currentImages.length]);
 
-  const {
-    displayedLocalisation,
-    locationSuggestions,
-    mapCenter,
-    mapStatus,
-  } = useAnnonceLocation({
-    isEditing,
-    localisationValue: isEditing ? editForm.localisation : annonce?.localisation,
-  });
+  const { displayedLocalisation, locationSuggestions, mapCenter, mapStatus } =
+    useAnnonceLocation({
+      isEditing,
+      localisationValue: isEditing
+        ? editForm.localisation
+        : annonce?.localisation,
+    });
 
   const isOwner = !!(
     isAuthenticated &&
@@ -210,18 +213,59 @@ export default function AnnonceDetailPage() {
       setIsMarkingSold(true);
       setError("");
       const response = await api.put("/annonces/" + id, {
-        statut: "expirée"
+        statut: "expirée",
       });
 
       const updatedAnnonce = response.data?.annonce || null;
       if (updatedAnnonce) {
         setAnnonce(updatedAnnonce);
-        setEditForm((prev) => ({ ...prev, statut: updatedAnnonce.statut || prev.statut }));
+        setEditForm((prev) => ({
+          ...prev,
+          statut: updatedAnnonce.statut || prev.statut,
+        }));
       }
     } catch (markError) {
-      setError(markError?.response?.data?.message || "Impossible de marquer l'annonce comme vendue.");
+      setError(
+        markError?.response?.data?.message ||
+          "Impossible de marquer l'annonce comme vendue.",
+      );
     } finally {
       setIsMarkingSold(false);
+    }
+  }
+
+  // gestion changment statut annonce brouillon
+  const [isPublishing, setIsPublishing] = useState(false);
+
+  async function handlePublishAnnonce() {
+    if (!annonce?.id || annonce.statut !== "brouillon") return;
+    if (
+      !window.confirm("Publier cette annonce pour la rendre visible de tous ?")
+    )
+      return;
+
+    try {
+      setIsPublishing(true);
+      setError("");
+
+      // Appel de la méthode dédiée du Back-end
+      const response = await api.patch(`/annonces/${id}/publish`);
+      const updatedAnnonce = response.data?.annonce || null;
+
+      if (updatedAnnonce) {
+        setAnnonce(updatedAnnonce);
+        setEditForm((prev) => ({
+          ...prev,
+          statut: updatedAnnonce.statut || prev.statut,
+        }));
+      }
+    } catch (publishError) {
+      setError(
+        publishError?.response?.data?.message ||
+          "Impossible de publier l'annonce.",
+      );
+    } finally {
+      setIsPublishing(false);
     }
   }
 
@@ -364,7 +408,9 @@ export default function AnnonceDetailPage() {
                       locationSuggestions={locationSuggestions}
                       onCancel={handleCancelEdit}
                       onEditChange={handleEditChange}
-                      onFilesChange={(files) => setEditFiles(Array.from(files || []))}
+                      onFilesChange={(files) =>
+                        setEditFiles(Array.from(files || []))
+                      }
                       onSave={handleSaveEdit}
                     />
                   ) : (
@@ -379,7 +425,10 @@ export default function AnnonceDetailPage() {
                         </span>
                       )}
                       {annonce.statut === "expirée" ? (
-                        <p className="annonce-meta" style={{ fontWeight: 700, color: "#d55353" }}>
+                        <p
+                          className="annonce-meta"
+                          style={{ fontWeight: 700, color: "#d55353" }}
+                        >
                           Statut: Vendue
                         </p>
                       ) : null}
@@ -432,7 +481,55 @@ export default function AnnonceDetailPage() {
                       )}
                     </>
                   )}
-
+                  {isOwner && !isEditing && annonce.statut === "brouillon" && (
+                    <div
+                      className="annonce-draft-alert-box"
+                      style={{
+                        background: "#fffbeb",
+                        border: "1px solid #fef3c7",
+                        borderRadius: "8px",
+                        padding: "16px",
+                        marginBottom: "16px",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "12px",
+                      }}
+                    >
+                      <div>
+                        <p
+                          style={{
+                            fontWeight: 700,
+                            color: "#92400e",
+                            margin: 0,
+                          }}
+                        >
+                          Cette annonce est un brouillon
+                        </p>
+                        <p
+                          style={{
+                            fontSize: "14px",
+                            color: "#b45309",
+                            margin: "4px 0 0 0",
+                          }}
+                        >
+                          Elle n'est visible que par vous.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        style={{
+                          background: "#10b981",
+                          borderColor: "#10b981",
+                          width: "100%",
+                        }}
+                        onClick={handlePublishAnnonce}
+                        disabled={isPublishing}
+                      >
+                        {isPublishing ? "Publication..." : "Publier l'annonce"}
+                      </button>
+                    </div>
+                  )}
                   {isOwner && !isEditing && (
                     <div className="annonce-owner-actions">
                       <button
@@ -448,7 +545,9 @@ export default function AnnonceDetailPage() {
                           onClick={handleMarkAsSold}
                           disabled={isMarkingSold}
                         >
-                          {isMarkingSold ? "Mise à jour..." : "Marquer comme vendue"}
+                          {isMarkingSold
+                            ? "Mise à jour..."
+                            : "Marquer comme vendue"}
                         </button>
                       ) : null}
                       <button

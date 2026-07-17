@@ -157,6 +157,7 @@ export default function MessagesPage() {
     }
   }, []);
 
+  // permet le changement de conversation
   useEffect(() => {
     if (hasInitializedRef.current) {
       return;
