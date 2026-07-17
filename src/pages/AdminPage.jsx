@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import AdminAnnoncesTab from "../components/admin/AdminAnnoncesTab";
 import AdminStatsTab from "../components/admin/AdminStatsTab";
 import AdminUsersTab from "../components/admin/AdminUsersTab";
+import AdminSupprimerModal from "../components/admin/AdminSupprimerModal";
+import AdminBlockUserModal from "../components/admin/AdminBlockUserModal";
 import PrivateHeader from "../components/PrivateHeader";
 import SiteFooter from "../components/SiteFooter";
 import api from "../services/api";
@@ -68,6 +70,21 @@ export default function AdminPage() {
   const [editingAnnonceForm, setEditingAnnonceForm] = useState(null);
   const [actionMessage, setActionMessage] = useState("");
   const [actionError, setActionError] = useState("");
+
+  // État local pour piloter la modale de suppression
+  const [deleteConfig, setDeleteConfig] = useState({
+    open: false,
+    type: null, // "annonce" ou "user"
+    id: null,
+    loading: false,
+    title: "",
+    message: ""
+  });
+
+  const [blockUserConfig, setBlockUserConfig] = useState({
+    open: false,
+    user: null,
+  });
 
   async function loadStats({ force = false } = {}) {
     if (statsState.loaded && !force) {
@@ -209,6 +226,17 @@ export default function AdminPage() {
     setEditingAnnonceForm(null);
   }
 
+  function closeDeleteModal() {
+    setDeleteConfig({
+      open: false,
+      type: null,
+      id: null,
+      loading: false,
+      title: "",
+      message: ""
+    });
+  }
+
   async function handleSaveAnnonce() {
     if (!editingAnnonceId || !editingAnnonceForm) {
       return;
@@ -234,15 +262,23 @@ export default function AdminPage() {
     }
   }
 
-  async function handleDeleteAnnonce(annonceId) {
-    const confirmed = window.confirm("Supprimer cette annonce ?");
-    if (!confirmed) {
-      return;
-    }
-
+  // Étape 1 : Intercepte le clic sur Supprimer Annonce et prépare la modale
+  function handleDeleteAnnonce(annonceId) {
     clearFeedback();
+    setDeleteConfig({
+      open: true,
+      type: "annonce",
+      id: annonceId,
+      loading: false,
+      title: "Supprimer cette annonce ?",
+      message: "Êtes-vous sûr de vouloir supprimer définitivement cette annonce ? Cette action retirera l'annonce du site immédiatement."
+    });
+  }
 
+  // Étape 2 : Exécute l'appel API après confirmation de l'annonce
+  async function confirmDeleteAnnonce(annonceId) {
     try {
+      setDeleteConfig(prev => ({ ...prev, loading: true }));
       await api.delete("/admin/annonces/" + annonceId);
 
       setAnnonceState((current) => ({
@@ -256,23 +292,30 @@ export default function AdminPage() {
       }
 
       setActionMessage("Annonce supprimée.");
+      closeDeleteModal();
     } catch (error) {
       setActionError(error?.response?.data?.message || "Impossible de supprimer l'annonce.");
+      setDeleteConfig(prev => ({ ...prev, loading: false }));
     }
   }
 
-  async function handleToggleUserBlock(user) {
-    const shouldBlock = !user.is_blocked;
-    const reason = shouldBlock
-      ? window.prompt("Raison du blocage (optionnel)", "Non-respect des règles") || ""
-      : "";
-
+  // 1. Appelé au clic sur le bouton "Bloquer/Débloquer" du tableau
+  function handleToggleUserBlock(user) {
     clearFeedback();
+    setBlockUserConfig({
+      open: true,
+      user: user,
+    });
+  }
+
+  // 2. Appelé après validation définitive dans la modale
+  async function confirmToggleUserBlock(user, reason) {
+    const shouldBlock = !user.is_blocked;
 
     try {
       const response = await api.patch("/admin/users/" + user.id + "/block", {
         blocked: shouldBlock,
-        reason
+        reason: shouldBlock ? reason : ""
       });
 
       const nextBlocked = response.data?.user?.is_blocked;
@@ -295,20 +338,29 @@ export default function AdminPage() {
 
       setActionMessage(shouldBlock ? "Utilisateur bloqué." : "Utilisateur débloqué.");
       loadStats({ force: true });
+      setBlockUserConfig({ open: false, user: null }); // Ferme la modale
     } catch (error) {
       setActionError(error?.response?.data?.message || "Impossible de mettre à jour cet utilisateur.");
     }
   }
 
-  async function handleDeleteUser(userId) {
-    const confirmed = window.confirm("Supprimer cet utilisateur et ses données associées ?");
-    if (!confirmed) {
-      return;
-    }
-
+  // Étape 1 : Intercepte le clic sur Supprimer Utilisateur et prépare la modale
+  function handleDeleteUser(userId) {
     clearFeedback();
+    setDeleteConfig({
+      open: true,
+      type: "user",
+      id: userId,
+      loading: false,
+      title: "Supprimer cet utilisateur ?",
+      message: "Êtes-vous sûr de vouloir supprimer cet utilisateur ainsi que toutes ses données associées (annonces, messages, profils...) ?"
+    });
+  }
 
+  // Étape 2 : Exécute l'appel API après confirmation de l'utilisateur
+  async function confirmDeleteUser(userId) {
     try {
+      setDeleteConfig(prev => ({ ...prev, loading: true }));
       await api.delete("/admin/users/" + userId);
 
       setUserState((current) => ({
@@ -319,8 +371,20 @@ export default function AdminPage() {
 
       setActionMessage("Utilisateur supprimé.");
       loadStats({ force: true });
+      closeDeleteModal();
     } catch (error) {
       setActionError(error?.response?.data?.message || "Impossible de supprimer cet utilisateur.");
+      setDeleteConfig(prev => ({ ...prev, loading: false }));
+    }
+  }
+
+  // Gestionnaire générique lié au bouton de validation de la modale unique
+  function handleGlobalConfirm() {
+    if (!deleteConfig.id) return;
+    if (deleteConfig.type === "annonce") {
+      confirmDeleteAnnonce(deleteConfig.id);
+    } else if (deleteConfig.type === "user") {
+      confirmDeleteUser(deleteConfig.id);
     }
   }
 
@@ -414,6 +478,23 @@ export default function AdminPage() {
             formatNumber={formatNumber}
           />
         ) : null}
+
+        {/* --- COMPOSANT MODALE DE SUPPRESSION UNIQUE DE L'ADMINISTRATION --- */}
+        <AdminSupprimerModal
+          open={deleteConfig.open}
+          title={deleteConfig.title}
+          message={deleteConfig.message}
+          isDeleting={deleteConfig.loading}
+          onClose={closeDeleteModal}
+          onConfirm={handleGlobalConfirm}
+        />
+
+        <AdminBlockUserModal
+          open={blockUserConfig.open}
+          user={blockUserConfig.user}
+          onClose={() => setBlockUserConfig({ open: false, user: null })}
+          onConfirm={confirmToggleUserBlock}
+        />
       </main>
 
       <SiteFooter />

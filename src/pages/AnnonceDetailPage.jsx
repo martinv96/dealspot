@@ -20,6 +20,9 @@ import SiteFooter from "../components/SiteFooter";
 import AnnonceEditForm from "../components/annonce/AnnonceEditForm";
 import AnnonceLocationCard from "../components/annonce/AnnonceLocationCard";
 import SignalerAnnonceModal from "../components/annonce/SignalerAnnonceModal";
+import PublierAnnonceModal from "../components/annonce/PublierBrouillonModal";
+import SupprimerAnnonceModal from "../components/annonce/SupprimerAnnonceModal";
+import MarquerVenduAnnonceModal from "../components/annonce/MarquerVenduAnnonceModal";
 import { useAuth } from "../context/useAuth";
 import { useAnnonceLocation } from "../hooks/useAnnonceLocation";
 import { useFavorites } from "../hooks/useFavorites";
@@ -66,6 +69,12 @@ export default function AnnonceDetailPage() {
   const [signalerLoading, setSignalerLoading] = useState(false);
   const [signalerSuccess, setSignalerSuccess] = useState("");
   const [signalerError, setSignalerError] = useState("");
+
+  const [showPublierModal, setShowPublierModal] = useState(false);
+
+  const [showSupprimerModal, setShowSupprimerModal] = useState(false);
+
+  const [showMarquerVenduModal, setShowMarquerVenduModal] = useState(false);
 
   useEffect(() => {
     // on charge l'annonce au montage et quand l'id change
@@ -192,11 +201,10 @@ export default function AnnonceDetailPage() {
   }
 
   async function handleDelete() {
-    // sécurité ui: confirmation avant suppression définitive
-    if (!window.confirm("Supprimer cette annonce ?")) return;
     try {
       setIsDeleting(true);
       await api.delete("/annonces/" + id);
+      setShowSupprimerModal(false); // Ferme la modale
       navigate("/mes-annonces", { replace: true });
     } catch {
       setError("Suppression impossible.");
@@ -205,9 +213,7 @@ export default function AnnonceDetailPage() {
   }
 
   async function handleMarkAsSold() {
-    // passage au statut expirée pour signaler la vente sans supprimer l'annonce
     if (!annonce?.id || annonce.statut === "expirée") return;
-    if (!window.confirm("Marquer cette annonce comme vendue ?")) return;
 
     try {
       setIsMarkingSold(true);
@@ -224,6 +230,7 @@ export default function AnnonceDetailPage() {
           statut: updatedAnnonce.statut || prev.statut,
         }));
       }
+      setShowMarquerVenduModal(false); // Ferme la modale de vente
     } catch (markError) {
       setError(
         markError?.response?.data?.message ||
@@ -237,21 +244,14 @@ export default function AnnonceDetailPage() {
   // gestion changment statut annonce brouillon
   const [isPublishing, setIsPublishing] = useState(false);
 
-  async function handlePublishAnnonce() {
+  async function handlePublierAnnonce() {
     if (!annonce?.id || annonce.statut !== "brouillon") return;
-    if (
-      !window.confirm("Publier cette annonce pour la rendre visible de tous ?")
-    )
-      return;
-
+    // On n'a plus besoin du window.confirm ici puisqu'on est déjà dans la modale !
     try {
       setIsPublishing(true);
       setError("");
-
-      // Appel de la méthode dédiée du Back-end
       const response = await api.patch(`/annonces/${id}/publish`);
       const updatedAnnonce = response.data?.annonce || null;
-
       if (updatedAnnonce) {
         setAnnonce(updatedAnnonce);
         setEditForm((prev) => ({
@@ -259,6 +259,7 @@ export default function AnnonceDetailPage() {
           statut: updatedAnnonce.statut || prev.statut,
         }));
       }
+      setShowPublierModal(false); // On ferme la modale après le succès !
     } catch (publishError) {
       setError(
         publishError?.response?.data?.message ||
@@ -345,30 +346,14 @@ export default function AnnonceDetailPage() {
                         <img src={image} alt="miniature" />
                       </button>
 
-                      {/* suppression */}
+                      {/* suppression photo */}
                       {isEditing && image !== FALLBACK_IMAGE && (
                         <button
                           type="button"
+                          className="annonce-delete-photo"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleRemoveExistingImage(index);
-                          }}
-                          style={{
-                            position: "absolute",
-                            top: "-5px",
-                            right: "-5px",
-                            background: "red",
-                            color: "white",
-                            border: "none",
-                            borderRadius: "50%",
-                            width: "18px",
-                            height: "18px",
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: "10px",
-                            zIndex: 5,
                           }}
                         >
                           <FaTimes />
@@ -482,19 +467,7 @@ export default function AnnonceDetailPage() {
                     </>
                   )}
                   {isOwner && !isEditing && annonce.statut === "brouillon" && (
-                    <div
-                      className="annonce-draft-alert-box"
-                      style={{
-                        background: "#fffbeb",
-                        border: "1px solid #fef3c7",
-                        borderRadius: "8px",
-                        padding: "16px",
-                        marginBottom: "16px",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "12px",
-                      }}
-                    >
+                    <div className="annonce-draft-alert-box">
                       <div>
                         <p
                           style={{
@@ -523,10 +496,9 @@ export default function AnnonceDetailPage() {
                           borderColor: "#10b981",
                           width: "100%",
                         }}
-                        onClick={handlePublishAnnonce}
-                        disabled={isPublishing}
+                        onClick={() => setShowPublierModal(true)} // Ouvre la modale
                       >
-                        {isPublishing ? "Publication..." : "Publier l'annonce"}
+                        Publier l'annonce
                       </button>
                     </div>
                   )}
@@ -542,17 +514,15 @@ export default function AnnonceDetailPage() {
                       {annonce.statut !== "expirée" ? (
                         <button
                           className="btn btn-outline"
-                          onClick={handleMarkAsSold}
+                          onClick={() => setShowMarquerVenduModal(true)} // Ouvre la modale !
                           disabled={isMarkingSold}
                         >
-                          {isMarkingSold
-                            ? "Mise à jour..."
-                            : "Marquer comme vendue"}
+                          Marquer comme vendue
                         </button>
                       ) : null}
                       <button
                         className="btn btn-outline"
-                        onClick={handleDelete}
+                        onClick={() => setShowSupprimerModal(true)} // Ouvre la modale à la place du confirm
                         disabled={isDeleting}
                       >
                         <FaTrashAlt /> {isDeleting ? "..." : "Supprimer"}
@@ -609,6 +579,27 @@ export default function AnnonceDetailPage() {
           signalerSuccess={signalerSuccess}
           setSignalerDesc={setSignalerDesc}
           setSignalerMotif={setSignalerMotif}
+        />
+
+        <PublierAnnonceModal
+          open={showPublierModal}
+          onClose={() => setShowPublierModal(false)}
+          onConfirm={handlePublierAnnonce}
+          isPublishing={isPublishing}
+        />
+
+        <SupprimerAnnonceModal
+          open={showSupprimerModal}
+          onClose={() => setShowSupprimerModal(false)}
+          onConfirm={handleDelete}
+          isDeleting={isDeleting}
+        />
+
+        <MarquerVenduAnnonceModal
+          open={showMarquerVenduModal}
+          onClose={() => setShowMarquerVenduModal(false)}
+          onConfirm={handleMarkAsSold}
+          isMarkingSold={isMarkingSold}
         />
       </main>
       <SiteFooter />

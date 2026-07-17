@@ -4,6 +4,7 @@ import { FaPaperPlane, FaRegCommentDots, FaTimes, FaUserCircle } from "react-ico
 import PrivateHeader from "../components/PrivateHeader";
 import SiteFooter from "../components/SiteFooter";
 import { useAuth } from "../context/useAuth";
+import SupprimerMessageModal from "../components/messages/SupprimerMessageModal";
 import api from "../services/api";
 
 function formatTime(dateValue) {
@@ -43,6 +44,10 @@ export default function MessagesPage() {
   const previousThreadLengthRef = useRef(0);
   const selectedRef = useRef(null);
   const hasInitializedRef = useRef(false);
+
+  const [showSupprimerModal, setShowSupprimerModal] = useState(false);
+const [conversationToDelete, setConversationToDelete] = useState(null);
+const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     selectedRef.current = selected;
@@ -245,24 +250,37 @@ export default function MessagesPage() {
     }
   }
 
-  async function handleDeleteConversation(conv) {
-    const confirmed = window.confirm("Supprimer cette conversation ?");
-    if (!confirmed) return;
+  // Déclenché par la croix dans la liste
+  function handleDeleteConversation(conv) {
+    setConversationToDelete(conv);
+    setShowSupprimerModal(true);
+  }
+
+  // Déclenché au clic sur "Supprimer la discussion" dans la modale
+  async function handleSupprimerConversationConfirm() {
+    if (!conversationToDelete) return;
+    const conv = conversationToDelete;
 
     try {
+      setDeleteLoading(true);
       await api.delete(`/messages/threads/${conv.otherUser.id}`, {
         params: conv.annonceId ? { annonceId: conv.annonceId } : undefined
       });
 
       const removedKey = `${conv.otherUser.id}-${conv.annonceId || 0}`;
       setConversations((prev) => prev.filter((item) => `${item.otherUser.id}-${item.annonceId || 0}` !== removedKey));
+      
       if (selectedKey === removedKey) {
         setSelected(null);
         setThread([]);
       }
       await loadConversations(false);
+      setShowSupprimerModal(false);
     } catch (err) {
       setError(err?.response?.data?.message || "Suppression impossible.");
+    } finally {
+      setDeleteLoading(false);
+      setConversationToDelete(null);
     }
   }
 
@@ -426,6 +444,15 @@ export default function MessagesPage() {
             )}
           </section>
         </section>
+        <SupprimerMessageModal
+          open={showSupprimerModal}
+          onClose={() => {
+            setShowSupprimerModal(false);
+            setConversationToDelete(null);
+          }}
+          onConfirm={handleSupprimerConversationConfirm}
+          isDeleting={deleteLoading}
+        />
       </main>
 
       <SiteFooter />

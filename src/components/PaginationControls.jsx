@@ -11,7 +11,7 @@ export default function PaginationControls({
   return (
     <div style={{ marginTop: "1rem", display: "flex", justifyContent: "center", gap: "0.75rem", alignItems: "center" }}>
       <button className="btn btn-outline" type="button" onClick={onPrevious} disabled={currentPage <= 1}>
-        Precedent
+        Précédent
       </button>
       <span>
         Page {currentPage} / {totalPages}
