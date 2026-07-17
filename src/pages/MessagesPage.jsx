@@ -42,6 +42,7 @@ export default function MessagesPage() {
   const endRef = useRef(null);
   const previousThreadLengthRef = useRef(0);
   const selectedRef = useRef(null);
+  const hasInitializedRef = useRef(false);
 
   useEffect(() => {
     selectedRef.current = selected;
@@ -157,6 +158,11 @@ export default function MessagesPage() {
   }, []);
 
   useEffect(() => {
+    if (hasInitializedRef.current) {
+      return;
+    }
+    hasInitializedRef.current = true;
+
     async function init() {
       try {
         setLoadingList(true);
