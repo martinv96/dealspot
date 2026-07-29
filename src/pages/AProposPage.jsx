@@ -88,7 +88,7 @@ const { isAuthenticated } = useAuth();
             Découvrir les annonces
           </Link>
           {!isAuthenticated && (
-            <Link to="/inscription" className="about-btn-secondary">
+            <Link to="/register" className="about-btn-secondary">
               Créer un compte
             </Link>
           )} {isAuthenticated && (
