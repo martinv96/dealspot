@@ -1,0 +1,82 @@
+.error-shell {
+    min-height: 100vh;
+    background: linear-gradient(180deg, #f6fbff 0%, #ffffff 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 18px;
+}
+
+.error-main {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.error-card {
+    width: min(920px, 100%);
+    background: #ffffff;
+    border: 1px solid rgba(46, 109, 153, 0.12);
+    box-shadow: 0 24px 60px rgba(15, 43, 71, 0.08);
+    border-radius: 28px;
+    padding: 48px 40px;
+    text-align: center;
+}
+
+.error-code {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 112px;
+    height: 112px;
+    margin: 0 auto 24px;
+    border-radius: 50%;
+    background: rgba(77, 181, 255, 0.14);
+    color: var(--blue-2);
+    font-size: 3rem;
+    font-weight:800;
+}
+
+.error-title {
+    font-size: clamp(2rem, 2.5vw, 3rem);
+    margin-bottom: 16px;
+    color: var(--text-main);
+}
+
+.error-subtitle {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 18px;
+}
+
+.error-text {
+    max-width: 640px;
+    margin: 0 auto 30px;
+    color: var(--text-soft);
+    line-height: 1.8;
+}
+
+.error-actions {
+    display: inline-flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+@media (max-width: 720px) {
+    .error-card {
+        padding: 32px 22px;
+    }
+
+    .error-code {
+        width: 96px;
+        height: 96px;
+        font-size: 2.4rem;
+    }
+
+    .error-actions {
+        width: 100%;
+        justify-content: center;
+    }
+}

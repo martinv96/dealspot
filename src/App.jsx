@@ -20,6 +20,7 @@ import AProposPage from "./pages/AProposPage";
 import ContactPage from "./pages/ContactPage";
 import AdminPage from "./pages/AdminPage";
 import CgvPage from "./pages/CgvPage";
+import { Error403Page, Error404Page, Error429Page, Error500Page, ErrorDefaultPage } from "./pages/ErrorPage";
 
 const DEFAULT_SEO = {
   title: "DealSpot - Petites annonces locales",
@@ -251,6 +252,12 @@ export default function App() {
             </AdminRoute>
           }
         />
+        <Route path="/403" element={<Error403Page />} />
+        <Route path="/404" element={<Error404Page />} />
+        <Route path="/429" element={<Error429Page />} />
+        <Route path="/500" element={<Error500Page />} />
+        <Route path="/erreur" element={<ErrorDefaultPage />} />        
+        <Route path="*" element={<Error404Page />} />      
       </Routes>
     </>
   );
