@@ -27,7 +27,7 @@ export default (sequelize) => {
       },
       annonce_id: {
         type: DataTypes.INTEGER,
-        allowNull: true,
+        allowNull: false,
         references: {
           model: "annonce",
           key: "id"
