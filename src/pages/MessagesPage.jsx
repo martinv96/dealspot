@@ -323,21 +323,11 @@ const [deleteLoading, setDeleteLoading] = useState(false);
                     <div
                       key={key}
                       className={`messages-conversation-item${isActive ? " active" : ""}`}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => {
-                        setSelected(conv);
-                        setConversations((prev) =>
-                          prev.map((item) => {
-                            const itemKey = `${item.otherUser.id}-${item.annonceId || 0}`;
-                            return itemKey === key ? { ...item, unreadCount: 0 } : item;
-                          })
-                        );
-                        setSearchParams({});
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
+                    >
+                      <button
+                        type="button"
+                        className="messages-conversation-item-trigger"
+                        onClick={() => {
                           setSelected(conv);
                           setConversations((prev) =>
                             prev.map((item) => {
@@ -346,15 +336,15 @@ const [deleteLoading, setDeleteLoading] = useState(false);
                             })
                           );
                           setSearchParams({});
-                        }
-                      }}
-                    >
-                      <div className="messages-conversation-avatar"><FaUserCircle /></div>
-                      <div className="messages-conversation-body">
-                        <strong>{conv.otherUser.pseudo}</strong>
-                        <span>{conv.annonce?.titre || "Conversation"}</span>
-                        <p>{conv.lastMessage || "Commencer la discussion"}</p>
-                      </div>
+                        }}
+                      >
+                        <div className="messages-conversation-avatar"><FaUserCircle /></div>
+                        <div className="messages-conversation-body">
+                          <strong>{conv.otherUser.pseudo}</strong>
+                          <span>{conv.annonce?.titre || "Conversation"}</span>
+                          <p>{conv.lastMessage || "Commencer la discussion"}</p>
+                        </div>
+                      </button>
                       <div className="messages-conversation-meta">
                         <span>{formatTime(conv.lastDate)}</span>
                         {!isActive && conv.unreadCount > 0 ? <em>{conv.unreadCount}</em> : null}
@@ -431,7 +421,12 @@ const [deleteLoading, setDeleteLoading] = useState(false);
                     onChange={(e) => setDraft(e.target.value)}
                     placeholder="Ecrivez votre message..."
                   />
-                  <button type="submit" className="btn btn-contact" disabled={sendLoading || !draft.trim()}>
+                  <button
+                    type="submit"
+                    className="btn btn-contact"
+                    disabled={sendLoading || !draft.trim()}
+                    aria-label="Envoyer le message"
+                  >
                     <FaPaperPlane />
                   </button>
                 </form>

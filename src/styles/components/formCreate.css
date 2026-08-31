@@ -19,7 +19,7 @@
 .create-annonce-header p,
 .create-annonce-card-subtitle,
 .create-annonce-help {
-  color: #8b8b8b;
+  color: #6e6e6e;
   font-size: 0.85rem;
 }
 
@@ -56,7 +56,7 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  color: #8b8b8b;
+  color: #6e6e6e;
   background: #fff;
   cursor: pointer;
 }

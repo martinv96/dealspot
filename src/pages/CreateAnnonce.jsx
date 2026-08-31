@@ -151,13 +151,13 @@ const CreateAnnonce = () => {
 
           <div className="create-annonce-grid">
             <div className="create-annonce-field">
-              <label>Prix (€) *</label>
-              <input name="prix" type="number" value={formData.prix} onChange={handleChange} />
+              <label htmlFor="prix">Prix (€) *</label>
+              <input id="prix" name="prix" type="number" value={formData.prix} onChange={handleChange} />
             </div>
 
             <div className="create-annonce-field">
-              <label>Catégorie *</label>
-              <select name="categorie" value={formData.categorie} onChange={handleChange}>
+              <label htmlFor="categorie">Catégorie *</label>
+              <select id="categorie" name="categorie" value={formData.categorie} onChange={handleChange}>
                 <option value="">Sélectionnez</option>
                 <option value="meubles">Meubles</option>
                 <option value="electronique">Électronique</option>

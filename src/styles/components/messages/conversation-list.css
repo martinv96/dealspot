@@ -11,11 +11,10 @@
   border-bottom: 1px solid #efefef;
   background: #fff;
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
   gap: 10px;
-  text-align: left;
   padding: 10px 12px;
-  cursor: pointer;
 }
 
 .messages-conversation-item:hover {
@@ -24,6 +23,21 @@
 
 .messages-conversation-item.active {
   background: #edf4ff;
+}
+
+.messages-conversation-item-trigger {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
 }
 
 .messages-conversation-avatar {
@@ -49,7 +63,7 @@
 .messages-conversation-body span {
   display: block;
   font-size: 0.74rem;
-  color: #7f8da3;
+  color: #5a6a85;
   margin-bottom: 3px;
   white-space: nowrap;
   overflow: hidden;
@@ -66,7 +80,7 @@
 
 .messages-conversation-meta {
   font-size: 0.7rem;
-  color: #8c9ab1;
+  color: #5f6d88;
   display: grid;
   justify-items: end;
   gap: 4px;

@@ -19,7 +19,7 @@
 
 .messages-thread-head p {
   font-size: 0.8rem;
-  color: #7d89a0;
+  color: #5a6a85;
   margin-top: 2px;
 }
 
@@ -115,6 +115,12 @@
   border-radius: 8px;
   padding: 10px 12px;
   font-size: 0.9rem;
+  outline: none;
+}
+
+.messages-thread-input input:focus {
+  border-color: #58a6df;
+  box-shadow: 0 0 0 3px rgba(88, 166, 223, 0.16);
 }
 
 .messages-thread-input .btn-contact {

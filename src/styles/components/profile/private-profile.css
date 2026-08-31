@@ -18,7 +18,7 @@
 }
 
 .profile-heading p {
-  color: #7a7a7a;
+  color: #6e6e6e;
   font-size: 0.9rem;
 }
 
@@ -60,7 +60,7 @@
 
 .profile-member-since {
   font-size: 0.82rem;
-  color: #7f7f7f;
+  color: #6e6e6e;
   margin-bottom: 18px;
 }
 
@@ -134,7 +134,7 @@
 
 .profile-form input[readonly] {
   background: #f2f2f2;
-  color: #7a7a7a;
+  color: #6a6a6a;
 }
 
 .profile-actions {
