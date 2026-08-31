@@ -23,7 +23,7 @@
   top: 8px;
   left: 8px;
   z-index: 2;
-  background: #58b158;
+  background: #2f7d32;
   color: #fff;
   font-size: 0.7rem;
   font-weight: 700;
@@ -32,7 +32,7 @@
 }
 
 .badge--active {
-  background: #58b158;
+  background: #2f7d32;
 }
 
 .badge--sold {
