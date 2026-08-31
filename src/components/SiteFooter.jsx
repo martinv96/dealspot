@@ -23,10 +23,10 @@ export default function SiteFooter() {
         <div>
           <h4>Liens rapide</h4>
           <ul>
-            <Link to="/">Accueil</Link>
-            <Link to="/a-propos">A propos</Link>
-            <Link to="/contact">Contactez-nous</Link>
-            <Link to="/cgv">Conditions générales de vente</Link>
+            <li><Link to="/">Accueil</Link></li>
+            <li><Link to="/a-propos">A propos</Link></li>
+            <li><Link to="/contact">Contactez-nous</Link></li>
+            <li><Link to="/cgv">Conditions générales de vente</Link></li>
           </ul>
         </div>
 

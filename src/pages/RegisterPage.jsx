@@ -105,8 +105,9 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label>Je suis un</label>
+              <label htmlFor="role">Je suis un</label>
               <select
+                id="role"
                 name="role"
                 value={form.role}
                 onChange={handleChange}
