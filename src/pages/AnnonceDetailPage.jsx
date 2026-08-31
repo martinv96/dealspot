@@ -23,6 +23,7 @@ import SignalerAnnonceModal from "../components/annonce/SignalerAnnonceModal";
 import PublierAnnonceModal from "../components/annonce/PublierBrouillonModal";
 import SupprimerAnnonceModal from "../components/annonce/SupprimerAnnonceModal";
 import MarquerVenduAnnonceModal from "../components/annonce/MarquerVenduAnnonceModal";
+import AnnulerVenteAnnonceModal from "../components/annonce/AnnulerVenteAnnonceModal";
 import { useAuth } from "../context/useAuth";
 import { useAnnonceLocation } from "../hooks/useAnnonceLocation";
 import { useFavorites } from "../hooks/useFavorites";
@@ -45,6 +46,7 @@ export default function AnnonceDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isMarkingSold, setIsMarkingSold] = useState(false);
+  const [isCancellingSold, setIsCancellingSold] = useState(false);
   const [error, setError] = useState("");
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [shareCopied, setShareCopied] = useState(false);
@@ -75,6 +77,8 @@ export default function AnnonceDetailPage() {
   const [showSupprimerModal, setShowSupprimerModal] = useState(false);
 
   const [showMarquerVenduModal, setShowMarquerVenduModal] = useState(false);
+
+  const [showAnnulerVenteModal, setShowAnnulerVenteModal] = useState(false);
 
   useEffect(() => {
     // on charge l'annonce au montage et quand l'id change
@@ -238,6 +242,35 @@ export default function AnnonceDetailPage() {
       );
     } finally {
       setIsMarkingSold(false);
+    }
+  }
+
+  async function handleCancelSold() {
+    if (!annonce?.id || annonce.statut !== "expirée") return;
+
+    try {
+      setIsCancellingSold(true);
+      setError("");
+      const response = await api.put("/annonces/" + id, {
+        statut: "active",
+      });
+
+      const updatedAnnonce = response.data?.annonce || null;
+      if (updatedAnnonce) {
+        setAnnonce(updatedAnnonce);
+        setEditForm((prev) => ({
+          ...prev,
+          statut: updatedAnnonce.statut || prev.statut,
+        }));
+      }
+      setShowAnnulerVenteModal(false); // Ferme la modale d'annulation
+    } catch (cancelError) {
+      setError(
+        cancelError?.response?.data?.message ||
+          "Impossible d'annuler la vente de l'annonce.",
+      );
+    } finally {
+      setIsCancellingSold(false);
     }
   }
 
@@ -519,7 +552,15 @@ export default function AnnonceDetailPage() {
                         >
                           Marquer comme vendue
                         </button>
-                      ) : null}
+                      ) : (
+                        <button
+                          className="btn btn-outline"
+                          onClick={() => setShowAnnulerVenteModal(true)} // Ouvre la modale d'annulation
+                          disabled={isCancellingSold}
+                        >
+                          Annuler la vente
+                        </button>
+                      )}
                       <button
                         className="btn btn-outline"
                         onClick={() => setShowSupprimerModal(true)} // Ouvre la modale à la place du confirm
@@ -600,6 +641,13 @@ export default function AnnonceDetailPage() {
           onClose={() => setShowMarquerVenduModal(false)}
           onConfirm={handleMarkAsSold}
           isMarkingSold={isMarkingSold}
+        />
+
+        <AnnulerVenteAnnonceModal
+          open={showAnnulerVenteModal}
+          onClose={() => setShowAnnulerVenteModal(false)}
+          onConfirm={handleCancelSold}
+          isCancellingSold={isCancellingSold}
         />
       </main>
       <SiteFooter />

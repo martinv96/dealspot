@@ -1,10 +1,10 @@
-import { FaTimes, FaCheckCircle } from "react-icons/fa";
+import { FaTimes, FaUndo } from "react-icons/fa";
 
-export default function MarquerVenduAnnonceModal({
+export default function AnnulerVenteAnnonceModal({
   onClose,
   onConfirm,
   open,
-  isMarkingSold,
+  isCancellingSold,
 }) {
   if (!open) return null;
 
@@ -13,33 +13,33 @@ export default function MarquerVenduAnnonceModal({
       <div className="modal-box" onClick={(event) => event.stopPropagation()}>
         <div className="modal-header">
           <h3 style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <FaCheckCircle style={{ color: "#3b82f6", fontSize: "18px" }} /> Marquer comme vendue
+            <FaUndo style={{ color: "#3b82f6", fontSize: "18px" }} /> Annuler la vente
           </h3>
           <button className="modal-close-btn" onClick={onClose}>
             <FaTimes />
           </button>
         </div>
-        
+
         <div className="modal-body" style={{ padding: "16px 0", color: "#4b5563" }}>
           <p style={{ margin: "0 0 8px 0", fontWeight: 600, color: "#111827" }}>
-            Avez-vous vendu cet objet ?
+            Annuler la vente de cet objet ?
           </p>
           <p style={{ margin: 0, fontSize: "14px", color: "#6b7280" }}>
-            L'annonce sera marqué comme étant <strong>"Vendue"</strong>. Les autres utilisateurs ne pourront plus vous contacter à son sujet.
+            L'annonce sera de nouveau <strong>"Active"</strong>. Elle sera de nouveau visible pour les autres utilisateurs.
           </p>
         </div>
 
-        <div className="modal-actions" style={{ 
-          display: "flex", 
-          justifyContent: "flex-end", 
-          gap: "12px", 
-          marginTop: "16px" 
+        <div className="modal-actions" style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: "12px",
+          marginTop: "16px"
         }}>
           <button
             type="button"
             className="btn btn-outline"
             onClick={onClose}
-            disabled={isMarkingSold}
+            disabled={isCancellingSold}
           >
             Annuler
           </button>
@@ -48,9 +48,9 @@ export default function MarquerVenduAnnonceModal({
             className="btn btn-primary"
             style={{ background: "#3b82f6", borderColor: "#3b82f6" }}
             onClick={onConfirm}
-            disabled={isMarkingSold}
+            disabled={isCancellingSold}
           >
-            {isMarkingSold ? "Mise à jour..." : "Confirmer la vente"}
+            {isCancellingSold ? "Mise à jour..." : "Confirmer"}
           </button>
         </div>
       </div>
