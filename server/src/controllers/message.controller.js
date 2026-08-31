@@ -172,6 +172,10 @@ export async function sendMessage(req, res) {
       return res.status(400).json({ message: "Destinataire invalide." });
     }
 
+    if (!annonceId) {
+      return res.status(400).json({ message: "Un message ne peut être envoyé que depuis une annonce." });
+    }
+
     if (!contenu) {
       return res.status(400).json({ message: "Le message ne peut pas etre vide." });
     }
@@ -181,17 +185,15 @@ export async function sendMessage(req, res) {
       return res.status(404).json({ message: "Destinataire introuvable." });
     }
 
-    if (annonceId) {
-      const annonce = await Annonce.findByPk(annonceId, { attributes: ["id"] });
-      if (!annonce) {
-        return res.status(404).json({ message: "Annonce introuvable." });
-      }
+    const annonce = await Annonce.findByPk(annonceId, { attributes: ["id"] });
+    if (!annonce) {
+      return res.status(404).json({ message: "Annonce introuvable." });
     }
 
     const message = await Message.create({
       sender_id: senderId,
       receiver_id: receiverId,
-      annonce_id: annonceId || null,
+      annonce_id: annonceId,
       contenu,
       lu: false
     });
@@ -199,7 +201,7 @@ export async function sendMessage(req, res) {
     return res.status(201).json({ message });
   } catch (error) {
     console.error("Erreur sendMessage:", error);
-    return res.status(500).json({ message: "Erreur envoi message." });
+    return res.status(500).json({ message: "Impossible d'envoyer ce message pour le moment. Réessayez dans quelques instants." });
   }
 }
 

@@ -230,7 +230,11 @@ const [deleteLoading, setDeleteLoading] = useState(false);
   async function handleSend(e) {
     e.preventDefault();
     const contenu = draft.trim();
-    if (!contenu || !selected?.otherUser?.id) return;
+    if (!contenu) return;
+    if (!selected?.otherUser?.id) {
+      setError("Sélectionnez une conversation à gauche, ou contactez un vendeur depuis une annonce pour en démarrer une.");
+      return;
+    }
 
     try {
       setSendLoading(true);
@@ -244,7 +248,7 @@ const [deleteLoading, setDeleteLoading] = useState(false);
       await loadConversations(true);
       setSearchParams({});
     } catch (err) {
-      setError(err?.response?.data?.message || "Envoi impossible.");
+      setError(err?.response?.data?.message || "L'envoi du message a échoué. Réessayez.");
     } finally {
       setSendLoading(false);
     }

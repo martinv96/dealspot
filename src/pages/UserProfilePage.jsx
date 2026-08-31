@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { FaUserCircle, FaMapMarkerAlt, FaRegCalendarAlt, FaFlag } from "react-icons/fa";
 import PrivateHeader from "../components/PrivateHeader";
 import SiteFooter from "../components/SiteFooter";
+import SignalerUtilisateurModal from "../components/profile/SignalerUtilisateurModal";
 import { useAuth } from "../context/useAuth";
 import api from "../services/api";
 
@@ -48,12 +49,19 @@ function formatPrice(value) {
 
 export default function UserProfilePage() {
   const { id } = useParams();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   const [profileUser, setProfileUser] = useState(null);
   const [annonces, setAnnonces] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const [showSignalerModal, setShowSignalerModal] = useState(false);
+  const [signalerMotif, setSignalerMotif] = useState("");
+  const [signalerDesc, setSignalerDesc] = useState("");
+  const [signalerLoading, setSignalerLoading] = useState(false);
+  const [signalerSuccess, setSignalerSuccess] = useState("");
+  const [signalerError, setSignalerError] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -74,6 +82,39 @@ export default function UserProfilePage() {
     }
     load();
   }, [id]);
+
+  async function handleSignalerUtilisateur(e) {
+    // envoi vers la boite de contact mongo, catégorisé comme signalement d'utilisateur
+    e.preventDefault();
+    setSignalerLoading(true);
+    setSignalerError("");
+    setSignalerSuccess("");
+    try {
+      await api.post("/contact", {
+        email: user?.email || "non-renseigne@dealspot.fr",
+        sujet: `Signalement utilisateur : ${profileUser?.pseudo || id}`,
+        message: signalerDesc || "Aucune description fournie.",
+        categorie: "signalement_utilisateur",
+        meta: {
+          motif: signalerMotif,
+          reportedUserId: profileUser?.id || id,
+          reportedPseudo: profileUser?.pseudo,
+          reporterId: user?.id
+        }
+      });
+      setSignalerSuccess("Signalement envoyé. Merci !");
+      setTimeout(() => {
+        setShowSignalerModal(false);
+        setSignalerMotif("");
+        setSignalerDesc("");
+        setSignalerSuccess("");
+      }, 2000);
+    } catch (err) {
+      setSignalerError(err?.response?.data?.message || "Erreur lors du signalement.");
+    } finally {
+      setSignalerLoading(false);
+    }
+  }
 
   const breadcrumbHome = "/";
 
@@ -120,14 +161,7 @@ export default function UserProfilePage() {
                     )}
                   </div>
 
-                  <Link
-                    to={`/messages?userId=${profileUser.id}&pseudo=${encodeURIComponent(profileUser.pseudo || "Utilisateur")}`}
-                    className="btn btn-contact user-profile-contact-btn"
-                  >
-                    Contacter {profileUser.pseudo}
-                  </Link>
-
-                  <button className="user-profile-report-btn">
+                  <button className="user-profile-report-btn" onClick={() => setShowSignalerModal(true)}>
                     <FaFlag /> Signaler cet utilisateur
                   </button>
                 </div>
@@ -175,6 +209,20 @@ export default function UserProfilePage() {
           </>
         ) : null}
       </main>
+
+      <SignalerUtilisateurModal
+        open={showSignalerModal}
+        onClose={() => setShowSignalerModal(false)}
+        onSubmit={handleSignalerUtilisateur}
+        signalerMotif={signalerMotif}
+        signalerDesc={signalerDesc}
+        signalerError={signalerError}
+        signalerLoading={signalerLoading}
+        signalerSuccess={signalerSuccess}
+        setSignalerMotif={setSignalerMotif}
+        setSignalerDesc={setSignalerDesc}
+        pseudo={profileUser?.pseudo || "cet utilisateur"}
+      />
 
       <SiteFooter />
     </div>
