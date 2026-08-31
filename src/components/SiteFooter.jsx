@@ -24,7 +24,7 @@ export default function SiteFooter() {
           <h4>Liens rapide</h4>
           <ul>
             <Link to="/">Accueil</Link>
-            <Link to="/apropos">A propos</Link>
+            <Link to="/a-propos">A propos</Link>
             <Link to="/contact">Contactez-nous</Link>
             <Link to="/cgv">Conditions générales de vente</Link>
           </ul>

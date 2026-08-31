@@ -4,7 +4,10 @@ import {
   validateRegisterBody,
   validateLoginBody,
   validateAnnonceBody,
+  validateBody,
   validateChangePasswordBody,
+  validateForgotPasswordBody,
+  validateUpdateProfileBody,
   validateResetPasswordBody
 } from "../../src/middleware/validation.js";
 
@@ -129,4 +132,67 @@ test("validateResetPasswordBody exige token et mot de passe conforme", () => {
   assert.ok(missingToken.error);
   // On vérifie que l'erreur est également déclenchée pour la faiblesse du mot de passe
   assert.ok(weakPassword.error);
+});
+
+test("validateUpdateProfileBody normalise les champs facultatifs", () => {
+  const result = validateUpdateProfileBody({
+    pseudo: "  Martin  ",
+    email: " MARTIN@EXAMPLE.COM ",
+    telephone: " 514-555-0100 ",
+    localisation: " Montreal "
+  });
+
+  assert.ok(!result.error);
+  assert.equal(result.value.pseudo, "Martin");
+  assert.equal(result.value.email, "martin@example.com");
+  assert.equal(result.value.telephone, "514-555-0100");
+});
+
+test("validateForgotPasswordBody refuse un email invalide", () => {
+  const result = validateForgotPasswordBody({ email: "email-invalide" });
+
+  assert.ok(result.error);
+  assert.match(result.error, /email/i);
+});
+
+test("validateAnnonceBody accepte une mise a jour partielle", () => {
+  const result = validateAnnonceBody(
+    { prix: "125.50", statut: "brouillon", existingImages: ["image.jpg"] },
+    { partial: true }
+  );
+
+  assert.ok(!result.error);
+  assert.equal(result.value.prix, 125.5);
+  assert.equal(result.value.statut, "brouillon");
+  assert.deepEqual(result.value.existingImages, ["image.jpg"]);
+});
+
+test("validateBody refuse un payload invalide et transmet un payload valide", () => {
+  const middleware = validateBody((body) => body.valid ? { value: { valid: true } } : { error: "Invalide." });
+  const rejectedResponse = {
+    statusCode: 200,
+    body: null,
+    status(code) {
+      this.statusCode = code;
+      return this;
+    },
+    json(payload) {
+      this.body = payload;
+      return this;
+    }
+  };
+
+  let nextCalled = false;
+  middleware({ body: {} }, rejectedResponse, () => {
+    nextCalled = true;
+  });
+  assert.equal(rejectedResponse.statusCode, 400);
+  assert.equal(nextCalled, false);
+
+  const validRequest = { body: { valid: true } };
+  middleware(validRequest, rejectedResponse, () => {
+    nextCalled = true;
+  });
+  assert.equal(nextCalled, true);
+  assert.deepEqual(validRequest.validatedBody, { valid: true });
 });

@@ -185,3 +185,65 @@ test("adminSetUserBlock bloque un utilisateur existant", async () => {
   // Enfin, on vérifie que le motif du bannissement ("Spam") a bien été enregistré
   assert.equal(res.body.user.blocked_reason, "Spam");
 });
+
+test("adminSetUserBlock refuse un identifiant invalide", async () => {
+  const res = createRes();
+
+  await adminSetUserBlock({ params: { id: "invalide" }, user: { id: 1 } }, res);
+
+  assert.equal(res.statusCode, 400);
+  assert.equal(res.body.message, "ID utilisateur invalide.");
+});
+
+test("adminSetUserBlock refuse le blocage de l'administrateur courant", async () => {
+  const res = createRes();
+
+  await adminSetUserBlock({ params: { id: "1" }, user: { id: 1 } }, res);
+
+  assert.equal(res.statusCode, 400);
+  assert.equal(res.body.message, "Vous ne pouvez pas vous bloquer vous-même.");
+});
+
+test("adminSetUserBlock indique si l'utilisateur est introuvable", async () => {
+  const originalUserFindByPk = db.User.findByPk;
+  db.User.findByPk = async () => null;
+  const res = createRes();
+
+  try {
+    await adminSetUserBlock({ params: { id: "15" }, user: { id: 1 }, body: {} }, res);
+  } finally {
+    db.User.findByPk = originalUserFindByPk;
+  }
+
+  assert.equal(res.statusCode, 404);
+  assert.equal(res.body.message, "Utilisateur introuvable.");
+});
+
+test("adminSetUserBlock debloque un utilisateur", async () => {
+  const originalUserFindByPk = db.User.findByPk;
+  const originalUserSecurityFindOrCreate = db.UserSecurity.findOrCreate;
+  const security = {
+    is_blocked: true,
+    blocked_at: new Date(),
+    blocked_reason: "Spam",
+    async save() {
+      return this;
+    }
+  };
+  db.User.findByPk = async () => ({ id: 15 });
+  db.UserSecurity.findOrCreate = async () => [security, false];
+  const res = createRes();
+
+  try {
+    await adminSetUserBlock({ params: { id: "15" }, user: { id: 1 }, body: { blocked: false } }, res);
+  } finally {
+    db.User.findByPk = originalUserFindByPk;
+    db.UserSecurity.findOrCreate = originalUserSecurityFindOrCreate;
+  }
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.message, "Utilisateur débloqué.");
+  assert.equal(res.body.user.is_blocked, false);
+  assert.equal(res.body.user.blocked_at, null);
+  assert.equal(res.body.user.blocked_reason, null);
+});

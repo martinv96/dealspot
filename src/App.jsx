@@ -66,7 +66,7 @@ function getSeoConfig(pathname, isAuthenticated) {
     };
   }
 
-  if (pathname === "/apropos") {
+  if (pathname === "/a-propos") {
     return {
       title: "A propos - DealSpot",
       description:
@@ -161,6 +161,16 @@ function SeoManager() {
   return null;
 }
 
+function ScrollToTop () {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo ({ top: 0, left: 0, behavior: "auto" });
+  }, [pathname]);
+
+  return null;
+}
+
 function RootRoute() {
   const { isAuthenticated, loading } = useAuth();
 
@@ -190,9 +200,11 @@ export default function App() {
     <>
       <SeoManager />
 
+      <ScrollToTop />
+
       <Routes>
         <Route path="/" element={<RootRoute />} />
-        <Route path="/apropos" element={<AProposPage />} />
+        <Route path="/a-propos" element={<AProposPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/register" element={<RegisterPage />} />
