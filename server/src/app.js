@@ -67,6 +67,28 @@ app.get("/api/health", (req, res) => {
   res.json({ ok: true });
 });
 
+function redirectToFrontend(req, res, routePath) {
+  const frontendBase = (process.env.FRONTEND_URL || "http://localhost:5173").trim().replace(/\/+$/, "");
+  const targetUrl = new URL(`${frontendBase}${routePath}`);
+
+  if (req.url && req.url.includes("?")) {
+    const searchParams = new URLSearchParams(req.url.split("?")[1] || "");
+    for (const [key, value] of searchParams.entries()) {
+      targetUrl.searchParams.set(key, value);
+    }
+  }
+
+  return res.redirect(302, targetUrl.toString());
+}
+
+app.get("/verification-email", (req, res) => {
+  return redirectToFrontend(req, res, "/verification-email");
+});
+
+app.get("/reinitialiser-mot-de-passe", (req, res) => {
+  return redirectToFrontend(req, res, "/reinitialiser-mot-de-passe");
+});
+
 app.use("/api/auth", authRoutes);
 app.use("/api/annonces", annonceRoutes);
 app.use("/api/messages", messageRoutes);

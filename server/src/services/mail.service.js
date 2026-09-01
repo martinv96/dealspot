@@ -73,7 +73,22 @@ function createTransporter(config) {
 }
 
 function getFrontendUrl() {
-  return process.env.FRONTEND_URL || "http://localhost:5173";
+  const configuredUrl = (process.env.FRONTEND_URL || "http://localhost:5173").trim().replace(/\/+$/, "");
+
+  if (!/^https?:\/\//i.test(configuredUrl)) {
+    console.warn("[MAIL] FRONTEND_URL invalide, utilisation du fallback local.", { configuredUrl });
+    return "http://localhost:5173";
+  }
+
+  const hostname = new URL(configuredUrl).hostname;
+  if (hostname.includes("railway.app") || hostname.includes("render.com") || hostname.includes("fly.dev")) {
+    console.warn("[MAIL] FRONTEND_URL pointe vers un backend, pas vers le frontend Vercel. Vérifiez la variable FRONTEND_URL.", {
+      configuredUrl,
+      hostname
+    });
+  }
+
+  return configuredUrl;
 }
 
 function generateReportEmailHTML({ report, annonce, reporter }) {
