@@ -19,6 +19,7 @@ import api from "../services/api";
 
 export default function PrivateHeader() {
   const { logout, user } = useAuth();
+  const canManageAnnonces = ["vendeur", "admin"].includes(user?.role);
   const navigate = useNavigate();
   const location = useLocation();
   const { favorites } = useFavorites();
@@ -99,7 +100,7 @@ export default function PrivateHeader() {
 
       <nav className={`nav nav-private${isMenuOpen ? " open" : ""}`}>
         <Link to="/" className="nav-link" onClick={closeMenu}><FaHome /> Accueil</Link>
-        {user?.role === "vendeur" ? (
+        {canManageAnnonces ? (
           <>
             <Link to="/mes-annonces" className="nav-link" onClick={closeMenu}><FaRegFileAlt /> Mes annonces</Link>
             <Link to="/creer-annonce" className="nav-link" onClick={closeMenu}><FaRegFileAlt /> Créer une annonce</Link>

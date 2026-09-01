@@ -55,8 +55,8 @@ export async function vendeurMiddleware(req, res, next) {
       attributes: ["id", "role"]
     });
 
-    if (!user || user.role !== "vendeur") {
-      return res.status(403).json({ message: "Accès vendeur requis pour créer une annonce." });
+    if (!user || !["vendeur", "admin"].includes(user.role)) {
+      return res.status(403).json({ message: "Accès vendeur ou administrateur requis pour créer une annonce." });
     }
 
     req.user.role = user.role;

@@ -54,6 +54,7 @@ function mapAnnonceToCard(annonce) {
 
 export default function PrivateHomePage() {
   const { user } = useAuth();
+  const canManageAnnonces = ["vendeur", "admin"].includes(user?.role);
   const [publishedAnnonces, setPublishedAnnonces] = useState([]);
   const [myAnnonces, setMyAnnonces] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -68,7 +69,7 @@ export default function PrivateHomePage() {
 
         const [publishedResponse, mineResponse] = await Promise.all([
           api.get("/annonces", { params: { limit: 6, page: 1 } }),
-          user?.role === "vendeur"
+          canManageAnnonces
             ? api.get("/annonces/me", { params: { limit: 6, page: 1, statut: "active" } })
             : Promise.resolve({ data: { annonces: [] } })
         ]);
@@ -83,7 +84,7 @@ export default function PrivateHomePage() {
     }
 
     loadDashboardData();
-  }, [user?.role]);
+  }, [canManageAnnonces]);
 
   const publishedCards = useMemo(
     () => publishedAnnonces.map(mapAnnonceToCard),
@@ -115,7 +116,7 @@ export default function PrivateHomePage() {
         </section>
 
 
-        {user?.role === "vendeur" ? (
+        {canManageAnnonces ? (
           <section className="section listings-section">
             <div className="section-head">
               <h2>Mes annonces en 1 clic</h2>

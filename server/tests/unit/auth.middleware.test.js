@@ -50,7 +50,7 @@ function createRes() {
 
       assert.equal(called, false);
       assert.equal(res.statusCode, 403);
-      assert.equal(res.body.message, "Accès vendeur requis pour créer une annonce.");
+      assert.equal(res.body.message, "Accès vendeur ou administrateur requis pour créer une annonce.");
     });
 
     test("vendeurMiddleware autorise un vendeur confirmé en BDD", async () => {
@@ -71,6 +71,27 @@ function createRes() {
 
       assert.equal(called, true);
       assert.equal(req.user.role, "vendeur");
+      assert.equal(res.statusCode, 200);
+    });
+
+    test("vendeurMiddleware autorise un administrateur confirmé en BDD", async () => {
+      const originalFindByPk = db.User.findByPk;
+      db.User.findByPk = async () => ({ id: 42, role: "admin" });
+
+      const req = { user: { id: 42, role: "vendeur" } };
+      const res = createRes();
+      let called = false;
+
+      try {
+        await vendeurMiddleware(req, res, () => {
+          called = true;
+        });
+      } finally {
+        db.User.findByPk = originalFindByPk;
+      }
+
+      assert.equal(called, true);
+      assert.equal(req.user.role, "admin");
       assert.equal(res.statusCode, 200);
     });
 // test n°1 : refus si pas de token

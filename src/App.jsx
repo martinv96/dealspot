@@ -200,7 +200,7 @@ function SellerRoute({ children }) {
 
   if (loading) return <div className="center-loader">Chargement en cours...</div>;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (user?.role !== "vendeur") return <Navigate to="/" replace />;
+  if (!["vendeur", "admin"].includes(user?.role)) return <Navigate to="/" replace />;
   return children;
 }
 
