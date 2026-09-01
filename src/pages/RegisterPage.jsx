@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import PublicHeader from "../components/PublicHeader";
 import SiteFooter from "../components/SiteFooter";
 import { useAuth } from "../context/useAuth";
@@ -7,7 +7,6 @@ import { validateRegisterForm } from "../utils/validation";
 
 export default function RegisterPage() {
   const { register } = useAuth();
-  const navigate = useNavigate();
 
   const [form, setForm] = useState({
     pseudo: "",
@@ -19,6 +18,7 @@ export default function RegisterPage() {
   });
 
   const [error, setError] = useState("");
+  const [infoMessage, setInfoMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
   function handleChange(e) {
@@ -27,6 +27,8 @@ export default function RegisterPage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    setInfoMessage("");
+
     const nextError = validateRegisterForm(form);
     setError(nextError);
     if (nextError) {
@@ -42,14 +44,11 @@ export default function RegisterPage() {
         role: form.role,
         password: form.password
       });
-
-      navigate("/connexion", {
-        state: {
-          info:
-            data?.message ||
-            "Inscription réussie. Vérifiez votre boîte mail et cliquez sur le lien de vérification avant de vous connecter."
-        }
-      });
+      setError("");
+      setInfoMessage(
+        data?.message ||
+          "Inscription réussie. Vérifiez votre boîte mail et cliquez sur le lien de vérification avant de vous connecter."
+      );
     } catch (err) {
       setError(err?.response?.data?.message || "Inscription impossible.");
     } finally {
@@ -77,7 +76,7 @@ export default function RegisterPage() {
                 name="pseudo"
                 value={form.pseudo}
                 onChange={handleChange}
-                placeholder="Ex: Alain Dupont"
+                placeholder="Ex: Martin Vallée"
                 required
               />
             </div>
@@ -89,7 +88,7 @@ export default function RegisterPage() {
                 name="email"
                 value={form.email}
                 onChange={handleChange}
-                placeholder="Ex: alain.dupont@mail.fr"
+                placeholder="Ex: martinv@email.fr"
                 required
               />
             </div>
@@ -101,13 +100,14 @@ export default function RegisterPage() {
                 name="localisation"
                 value={form.localisation}
                 onChange={handleChange}
-                placeholder="Ex: Paris 12eme"
+                placeholder="Ex: Paris 12ème"
               />
             </div>
 
             <div>
-              <label>Je suis un</label>
+              <label htmlFor="role">Je suis un</label>
               <select
+                id="role"
                 name="role"
                 value={form.role}
                 onChange={handleChange}
@@ -143,14 +143,15 @@ export default function RegisterPage() {
             </div>
           </div>
 
+          {infoMessage && <div className="form-success">{infoMessage}</div>}
           {error && <div className="form-error">{error}</div>}
 
           <button className="btn btn-auth" disabled={loading} type="submit">
-            {loading ? "Creation..." : "Créer mon compte"}
+            {loading ? "Création..." : "Créer mon compte"}
           </button>
 
           <p className="auth-bottom">
-            Vous avez déjà un compte ? <Link to="/connexion">Se connecter</Link>
+            Vous avez déjà un compte ? <Link to="/login">Se connecter</Link>
           </p>
         </form>
       </main>

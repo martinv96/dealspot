@@ -84,11 +84,11 @@ const { isAuthenticated } = useAuth();
           Chaque objet vendu sur DealSpot est un déchet en moins et une bonne affaire en plus. Communauté grandissante, transactions locales, plateforme épurée... qu'attendez-vous ?
         </p>
         <div className="about-cta-buttons">
-          <Link to={isAuthenticated ? "/app" : "/"} className="about-btn-main">
+          <Link to="/" className="about-btn-main">
             Découvrir les annonces
           </Link>
           {!isAuthenticated && (
-            <Link to="/inscription" className="about-btn-secondary">
+            <Link to="/register" className="about-btn-secondary">
               Créer un compte
             </Link>
           )} {isAuthenticated && (

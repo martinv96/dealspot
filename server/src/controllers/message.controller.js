@@ -1,16 +1,20 @@
 import db from "../models/index.js";
 import { Op } from "sequelize";
 
+// ce controller gère les conversations privées entre utilisateurs
+
 const Message = db.Message;
 const User = db.User;
 const Annonce = db.Annonce;
 
 function toInt(value) {
+  // helper commun pour valider les ids issus route/query/body
   const n = Number.parseInt(value, 10);
   return Number.isNaN(n) ? null : n;
 }
 
 function conversationKey(a, b, annonceId) {
+  // clé stable pour regrouper une conversation quel que soit le sens sender/receiver
   const x = Math.min(a, b);
   const y = Math.max(a, b);
   return `${x}-${y}-${annonceId || 0}`;
@@ -18,6 +22,8 @@ function conversationKey(a, b, annonceId) {
 
 export async function listConversations(req, res) {
   try {
+    // but: construire la liste des conversations pour la sidebar messages
+    // on part des messages bruts puis on agrège par clé de conversation
     const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ message: "Token invalide." });
@@ -84,6 +90,8 @@ export async function listConversations(req, res) {
 
 export async function getThread(req, res) {
   try {
+    // but: charger un fil complet entre deux utilisateurs
+    // puis marquer comme lus les messages entrants du thread
     const userId = req.user?.id;
     const otherUserId = toInt(req.params.otherUserId);
     const annonceId = toInt(req.query.annonceId);
@@ -149,6 +157,8 @@ export async function getThread(req, res) {
 
 export async function sendMessage(req, res) {
   try {
+    // but: créer un message dans une conversation
+    // on vérifie destinataire, contenu et annonce si elle est fournie
     const senderId = req.user?.id;
     const receiverId = toInt(req.body.receiverId);
     const annonceId = toInt(req.body.annonceId);
@@ -162,6 +172,10 @@ export async function sendMessage(req, res) {
       return res.status(400).json({ message: "Destinataire invalide." });
     }
 
+    if (!annonceId) {
+      return res.status(400).json({ message: "Un message ne peut être envoyé que depuis une annonce." });
+    }
+
     if (!contenu) {
       return res.status(400).json({ message: "Le message ne peut pas etre vide." });
     }
@@ -171,17 +185,15 @@ export async function sendMessage(req, res) {
       return res.status(404).json({ message: "Destinataire introuvable." });
     }
 
-    if (annonceId) {
-      const annonce = await Annonce.findByPk(annonceId, { attributes: ["id"] });
-      if (!annonce) {
-        return res.status(404).json({ message: "Annonce introuvable." });
-      }
+    const annonce = await Annonce.findByPk(annonceId, { attributes: ["id"] });
+    if (!annonce) {
+      return res.status(404).json({ message: "Annonce introuvable." });
     }
 
     const message = await Message.create({
       sender_id: senderId,
       receiver_id: receiverId,
-      annonce_id: annonceId || null,
+      annonce_id: annonceId,
       contenu,
       lu: false
     });
@@ -189,12 +201,14 @@ export async function sendMessage(req, res) {
     return res.status(201).json({ message });
   } catch (error) {
     console.error("Erreur sendMessage:", error);
-    return res.status(500).json({ message: "Erreur envoi message." });
+    return res.status(500).json({ message: "Impossible d'envoyer ce message pour le moment. Réessayez dans quelques instants." });
   }
 }
 
 export async function deleteThread(req, res) {
   try {
+    // but: supprimer l'historique d'un fil pour l'utilisateur courant
+    // ce endpoint efface les messages du couple users (+ annonce optionnelle)
     const userId = req.user?.id;
     const otherUserId = toInt(req.params.otherUserId);
     const annonceId = toInt(req.query.annonceId);
@@ -225,6 +239,8 @@ export async function deleteThread(req, res) {
 
 export async function deleteMessage(req, res) {
   try {
+    // but: supprimer un message unitaire
+    // garde-fou: seul l'expéditeur peut supprimer son message
     const userId = req.user?.id;
     const messageId = toInt(req.params.id);
 

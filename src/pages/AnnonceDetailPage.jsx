@@ -13,73 +13,27 @@ import {
   FaCommentDots,
   FaFlag,
 } from "react-icons/fa";
-import { CircleMarker, MapContainer, TileLayer, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import PublicHeader from "../components/PublicHeader";
 import PrivateHeader from "../components/PrivateHeader";
 import SiteFooter from "../components/SiteFooter";
+import AnnonceEditForm from "../components/annonce/AnnonceEditForm";
+import AnnonceLocationCard from "../components/annonce/AnnonceLocationCard";
+import SignalerAnnonceModal from "../components/annonce/SignalerAnnonceModal";
+import PublierAnnonceModal from "../components/annonce/PublierBrouillonModal";
+import SupprimerAnnonceModal from "../components/annonce/SupprimerAnnonceModal";
+import MarquerVenduAnnonceModal from "../components/annonce/MarquerVenduAnnonceModal";
+import AnnulerVenteAnnonceModal from "../components/annonce/AnnulerVenteAnnonceModal";
 import { useAuth } from "../context/useAuth";
+import { useAnnonceLocation } from "../hooks/useAnnonceLocation";
 import { useFavorites } from "../hooks/useFavorites";
 import api from "../services/api";
-
-const FALLBACK_IMAGE =
-  "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'><rect width='100%25' height='100%25' fill='%23f2f2f2'/><text x='50%25' y='50%25' font-family='Arial' font-size='36' fill='%23909090' text-anchor='middle' dominant-baseline='middle'>DealSpot</text></svg>";
-const API_ORIGIN = (import.meta.env.VITE_API_URL || "http://localhost:4000/api").replace(/\/api\/?$/, "");
-const IS_NGROK_ORIGIN = /ngrok-free\.dev|ngrok\.io/i.test(API_ORIGIN);
-const DEFAULT_MAP_CENTER = [48.8566, 2.3522];
-
-function withNgrokBypass(url) {
-  if (!IS_NGROK_ORIGIN || typeof url !== "string" || url.startsWith("data:")) {
-    return url;
-  }
-
-  const [base, hash = ""] = url.split("#");
-  const separator = base.includes("?") ? "&" : "?";
-  return `${base}${separator}ngrok-skip-browser-warning=true${hash ? `#${hash}` : ""}`;
-}
-
-function RecenterMap({ center }) {
-  const map = useMap();
-
-  useEffect(() => {
-    if (!center) return;
-    map.setView(center, 12, { animate: false });
-  }, [center, map]);
-
-  return null;
-}
-
-function formatPrice(value) {
-  const numberValue = Number(value);
-  if (Number.isNaN(numberValue)) return value;
-  return numberValue.toLocaleString("fr-FR");
-}
-
-function formatDate(rawDate) {
-  const date = new Date(rawDate);
-  if (Number.isNaN(date.getTime())) return "Date inconnue";
-  return new Intl.DateTimeFormat("fr-FR", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(date);
-}
-
-function cleanImages(rawImages) {
-  if (!Array.isArray(rawImages) || rawImages.length === 0) {
-    return [FALLBACK_IMAGE];
-  }
-  return rawImages
-    .filter((value) => typeof value === "string" && value.trim().length > 0)
-    .map((value) => {
-      if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//i.test(value)) {
-        const normalizedPath = value.replace(/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/i, "");
-        return withNgrokBypass(API_ORIGIN + normalizedPath);
-      }
-      if (value.startsWith("http") || value.startsWith("data:")) return withNgrokBypass(value);
-      return withNgrokBypass(API_ORIGIN + (value.startsWith("/") ? "" : "/") + value);
-    });
-}
+import {
+  cleanImages,
+  FALLBACK_IMAGE,
+  formatDate,
+  formatPrice,
+} from "../utils/annonceDetail";
 
 export default function AnnonceDetailPage() {
   const { id } = useParams();
@@ -92,11 +46,14 @@ export default function AnnonceDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isMarkingSold, setIsMarkingSold] = useState(false);
+  const [isCancellingSold, setIsCancellingSold] = useState(false);
   const [error, setError] = useState("");
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [shareCopied, setShareCopied] = useState(false);
 
-  // États pour le formulaire d'édition
+  // ces états pilotent les retours visuels des actions asynchrones
+
+  // ce bloc garde la version locale du formulaire pendant la modif
   const [editForm, setEditForm] = useState({
     titre: "",
     description: "",
@@ -107,8 +64,6 @@ export default function AnnonceDetailPage() {
   });
   const [existingImagesToKeep, setExistingImagesToKeep] = useState([]);
   const [editFiles, setEditFiles] = useState([]);
-  const [mapCenter, setMapCenter] = useState(null);
-  const [mapStatus, setMapStatus] = useState("idle");
 
   const [showSignalerModal, setShowSignalerModal] = useState(false);
   const [signalerMotif, setSignalerMotif] = useState("");
@@ -117,7 +72,16 @@ export default function AnnonceDetailPage() {
   const [signalerSuccess, setSignalerSuccess] = useState("");
   const [signalerError, setSignalerError] = useState("");
 
+  const [showPublierModal, setShowPublierModal] = useState(false);
+
+  const [showSupprimerModal, setShowSupprimerModal] = useState(false);
+
+  const [showMarquerVenduModal, setShowMarquerVenduModal] = useState(false);
+
+  const [showAnnulerVenteModal, setShowAnnulerVenteModal] = useState(false);
+
   useEffect(() => {
+    // on charge l'annonce au montage et quand l'id change
     async function loadAnnonce() {
       try {
         setIsLoading(true);
@@ -126,6 +90,7 @@ export default function AnnonceDetailPage() {
         setAnnonce(fetchedAnnonce);
 
         if (fetchedAnnonce) {
+          // préremplissage direct du formulaire d'édition avec les données existantes
           setEditForm({
             titre: fetchedAnnonce.titre || "",
             description: fetchedAnnonce.description || "",
@@ -148,69 +113,26 @@ export default function AnnonceDetailPage() {
     loadAnnonce();
   }, [id]);
 
-  // Les images affichées changent dynamiquement si on est en train d'éditer
+  // la galerie s'aligne automatiquement sur les images conservées pendant l'édition
   const currentImages = useMemo(() => {
     const list = isEditing ? existingImagesToKeep : annonce?.images || [];
     return cleanImages(list);
   }, [annonce, isEditing, existingImagesToKeep]);
 
   useEffect(() => {
+    // si la liste d'images change, on évite un index actif hors bornes
     if (activeImageIndex >= currentImages.length) {
       setActiveImageIndex(0);
     }
   }, [activeImageIndex, currentImages.length]);
 
-  const displayedLocalisation = (
-    isEditing ? editForm.localisation : annonce?.localisation || ""
-  ).trim();
-
-  useEffect(() => {
-    if (!displayedLocalisation) {
-      setMapCenter(null);
-      setMapStatus("empty");
-      return;
-    }
-
-    const controller = new AbortController();
-    setMapStatus("loading");
-    const timeoutId = setTimeout(async () => {
-      try {
-        const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(displayedLocalisation)}`;
-        const response = await fetch(url, {
-          signal: controller.signal,
-          headers: {
-            "Accept-Language": "fr",
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error("Echec geocodage");
-        }
-
-        const results = await response.json();
-        if (!Array.isArray(results) || results.length === 0) {
-          setMapCenter(null);
-          setMapStatus("not-found");
-          return;
-        }
-
-        const first = results[0];
-        setMapCenter([Number(first.lat), Number(first.lon)]);
-        setMapStatus("ok");
-      } catch (geocodeError) {
-        if (geocodeError?.name === "AbortError") {
-          return;
-        }
-        setMapCenter(null);
-        setMapStatus("error");
-      }
-    }, 350);
-
-    return () => {
-      clearTimeout(timeoutId);
-      controller.abort();
-    };
-  }, [displayedLocalisation]);
+  const { displayedLocalisation, locationSuggestions, mapCenter, mapStatus } =
+    useAnnonceLocation({
+      isEditing,
+      localisationValue: isEditing
+        ? editForm.localisation
+        : annonce?.localisation,
+    });
 
   const isOwner = !!(
     isAuthenticated &&
@@ -220,17 +142,20 @@ export default function AnnonceDetailPage() {
   const { isFavorite, toggleFavorite } = useFavorites();
 
   const handleRemoveExistingImage = (indexToRemove) => {
+    // retire uniquement côté état local, la suppression réelle se fait au save
     setExistingImagesToKeep((prev) =>
       prev.filter((_, i) => i !== indexToRemove),
     );
   };
 
   function handleEditChange(event) {
+    // un seul handler pour tous les champs du formulaire
     const { name, value } = event.target;
     setEditForm((current) => ({ ...current, [name]: value }));
   }
 
   function handleCancelEdit() {
+    // annulation = retour complet à la valeur persistée de l'annonce
     setEditForm({
       titre: annonce.titre || "",
       description: annonce.description || "",
@@ -245,6 +170,7 @@ export default function AnnonceDetailPage() {
   }
 
   function handleShare() {
+    // copie l'url actuelle puis affiche un feedback court
     navigator.clipboard.writeText(window.location.href).then(() => {
       setShareCopied(true);
       setTimeout(() => setShareCopied(false), 2500);
@@ -253,6 +179,7 @@ export default function AnnonceDetailPage() {
 
   async function handleSaveEdit() {
     try {
+      // le payload mixe texte + fichiers pour rester compatible upload d'images
       setIsSaving(true);
       setError("");
       const payload = new FormData();
@@ -260,7 +187,7 @@ export default function AnnonceDetailPage() {
         payload.append(key, editForm[key]),
       );
 
-      // On envoie la liste des images conservées
+      // on envoie la liste des images gardées pour éviter de supprimer trop de photos côté api
       payload.append("existingImages", JSON.stringify(existingImagesToKeep));
 
       editFiles.forEach((file) => payload.append("images", file));
@@ -278,10 +205,10 @@ export default function AnnonceDetailPage() {
   }
 
   async function handleDelete() {
-    if (!window.confirm("Supprimer cette annonce ?")) return;
     try {
       setIsDeleting(true);
       await api.delete("/annonces/" + id);
+      setShowSupprimerModal(false); // Ferme la modale
       navigate("/mes-annonces", { replace: true });
     } catch {
       setError("Suppression impossible.");
@@ -291,28 +218,93 @@ export default function AnnonceDetailPage() {
 
   async function handleMarkAsSold() {
     if (!annonce?.id || annonce.statut === "expirée") return;
-    if (!window.confirm("Marquer cette annonce comme vendue ?")) return;
 
     try {
       setIsMarkingSold(true);
       setError("");
       const response = await api.put("/annonces/" + id, {
-        statut: "expirée"
+        statut: "expirée",
       });
 
       const updatedAnnonce = response.data?.annonce || null;
       if (updatedAnnonce) {
         setAnnonce(updatedAnnonce);
-        setEditForm((prev) => ({ ...prev, statut: updatedAnnonce.statut || prev.statut }));
+        setEditForm((prev) => ({
+          ...prev,
+          statut: updatedAnnonce.statut || prev.statut,
+        }));
       }
+      setShowMarquerVenduModal(false); // Ferme la modale de vente
     } catch (markError) {
-      setError(markError?.response?.data?.message || "Impossible de marquer l'annonce comme vendue.");
+      setError(
+        markError?.response?.data?.message ||
+          "Impossible de marquer l'annonce comme vendue.",
+      );
     } finally {
       setIsMarkingSold(false);
     }
   }
 
+  async function handleCancelSold() {
+    if (!annonce?.id || annonce.statut !== "expirée") return;
+
+    try {
+      setIsCancellingSold(true);
+      setError("");
+      const response = await api.put("/annonces/" + id, {
+        statut: "active",
+      });
+
+      const updatedAnnonce = response.data?.annonce || null;
+      if (updatedAnnonce) {
+        setAnnonce(updatedAnnonce);
+        setEditForm((prev) => ({
+          ...prev,
+          statut: updatedAnnonce.statut || prev.statut,
+        }));
+      }
+      setShowAnnulerVenteModal(false); // Ferme la modale d'annulation
+    } catch (cancelError) {
+      setError(
+        cancelError?.response?.data?.message ||
+          "Impossible d'annuler la vente de l'annonce.",
+      );
+    } finally {
+      setIsCancellingSold(false);
+    }
+  }
+
+  // gestion changment statut annonce brouillon
+  const [isPublishing, setIsPublishing] = useState(false);
+
+  async function handlePublierAnnonce() {
+    if (!annonce?.id || annonce.statut !== "brouillon") return;
+    // On n'a plus besoin du window.confirm ici puisqu'on est déjà dans la modale !
+    try {
+      setIsPublishing(true);
+      setError("");
+      const response = await api.patch(`/annonces/${id}/publish`);
+      const updatedAnnonce = response.data?.annonce || null;
+      if (updatedAnnonce) {
+        setAnnonce(updatedAnnonce);
+        setEditForm((prev) => ({
+          ...prev,
+          statut: updatedAnnonce.statut || prev.statut,
+        }));
+      }
+      setShowPublierModal(false); // On ferme la modale après le succès !
+    } catch (publishError) {
+      setError(
+        publishError?.response?.data?.message ||
+          "Impossible de publier l'annonce.",
+      );
+    } finally {
+      setIsPublishing(false);
+    }
+  }
+
   async function handleSignaler(e) {
+    // envoi du signalement depuis la modale avec reset automatique après succès
     e.preventDefault();
     setSignalerLoading(true);
     setSignalerError("");
@@ -344,6 +336,7 @@ export default function AnnonceDetailPage() {
       {isAuthenticated ? <PrivateHeader /> : <PublicHeader />}
 
       <main className="page-main annonce-detail-page">
+        {/* chargement / erreur / contenu */}
         {isLoading ? (
           <p className="center-loader">Chargement...</p>
         ) : error ? (
@@ -351,7 +344,7 @@ export default function AnnonceDetailPage() {
         ) : annonce ? (
           <>
             <section className="annonce-detail-breadcrumb">
-              <Link to={isAuthenticated ? "/app" : "/"}>Accueil</Link>
+              <Link to="/">Accueil</Link>
               <span>/</span>
               <span>{annonce.categorie}</span>
               <span>/</span>
@@ -359,6 +352,7 @@ export default function AnnonceDetailPage() {
             </section>
 
             <section className="annonce-detail-grid">
+              {/* colonne media: image principale, miniatures, description, localisation */}
               <div className="annonce-media-card">
                 <div className="annonce-main-image-frame">
                   <img
@@ -385,30 +379,14 @@ export default function AnnonceDetailPage() {
                         <img src={image} alt="miniature" />
                       </button>
 
-                      {/* suppression */}
+                      {/* suppression photo */}
                       {isEditing && image !== FALLBACK_IMAGE && (
                         <button
                           type="button"
+                          className="annonce-delete-photo"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleRemoveExistingImage(index);
-                          }}
-                          style={{
-                            position: "absolute",
-                            top: "-5px",
-                            right: "-5px",
-                            background: "red",
-                            color: "white",
-                            border: "none",
-                            borderRadius: "50%",
-                            width: "18px",
-                            height: "18px",
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: "10px",
-                            zIndex: 5,
                           }}
                         >
                           <FaTimes />
@@ -431,106 +409,28 @@ export default function AnnonceDetailPage() {
                   )}
                 </div>
 
-                <div className="annonce-location-card">
-                  <h3>Localisation</h3>
-                  <div
-                    className="annonce-leaflet-wrap"
-                    aria-label="Carte de localisation de l'annonce"
-                  >
-                    <MapContainer
-                      center={mapCenter || DEFAULT_MAP_CENTER}
-                      zoom={12}
-                      scrollWheelZoom={false}
-                      className="annonce-leaflet-map"
-                    >
-                      <TileLayer
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                      />
-                      {mapCenter ? (
-                        <CircleMarker
-                          center={mapCenter}
-                          radius={10}
-                          pathOptions={{
-                            color: "#2f6fd6",
-                            fillColor: "#2f6fd6",
-                            fillOpacity: 0.28,
-                            weight: 2,
-                          }}
-                        />
-                      ) : null}
-                      <RecenterMap center={mapCenter} />
-                    </MapContainer>
-                  </div>
-                  <div className="annonce-location-note">
-                    <strong>
-                      {displayedLocalisation || "Localisation non renseignee"}
-                    </strong>
-                    <p>
-                      {mapStatus === "loading"
-                        ? "Recherche de la zone..."
-                        : null}
-                      {mapStatus === "not-found"
-                        ? "Zone introuvable. Verifiez la saisie."
-                        : null}
-                      {mapStatus === "error"
-                        ? "Impossible de charger la carte pour le moment."
-                        : null}
-                      {mapStatus === "ok" ||
-                      mapStatus === "idle" ||
-                      mapStatus === "empty"
-                        ? "Remise en main propre a convenir entre acheteur et vendeur."
-                        : null}
-                    </p>
-                  </div>
-                </div>
+                <AnnonceLocationCard
+                  displayedLocalisation={displayedLocalisation}
+                  mapCenter={mapCenter}
+                  mapStatus={mapStatus}
+                />
               </div>
 
               <aside className="annonce-side-col">
+                {/* colonne droite: résumé, actions, vendeur */}
                 <div className="annonce-summary-card">
                   {isEditing ? (
-                    <div className="annonce-edit-form">
-                      <label>Titre</label>
-                      <input
-                        name="titre"
-                        value={editForm.titre}
-                        onChange={handleEditChange}
-                      />
-                      <label>Prix (€)</label>
-                      <input
-                        name="prix"
-                        type="number"
-                        value={editForm.prix}
-                        onChange={handleEditChange}
-                      />
-                      <label>Ajouter des photos</label>
-                      <input
-                        type="file"
-                        multiple
-                        onChange={(e) =>
-                          setEditFiles(Array.from(e.target.files))
-                        }
-                      />
-
-                      <div
-                        className="annonce-owner-actions"
-                        style={{ marginTop: "1rem" }}
-                      >
-                        <button
-                          className="btn btn-primary"
-                          onClick={handleSaveEdit}
-                          disabled={isSaving}
-                        >
-                          {isSaving ? "Enregistrement..." : "Enregistrer"}
-                        </button>
-                        <button
-                          className="btn btn-outline"
-                          onClick={handleCancelEdit}
-                        >
-                          Annuler
-                        </button>
-                      </div>
-                    </div>
+                    <AnnonceEditForm
+                      editForm={editForm}
+                      isSaving={isSaving}
+                      locationSuggestions={locationSuggestions}
+                      onCancel={handleCancelEdit}
+                      onEditChange={handleEditChange}
+                      onFilesChange={(files) =>
+                        setEditFiles(Array.from(files || []))
+                      }
+                      onSave={handleSaveEdit}
+                    />
                   ) : (
                     <>
                       <h1>{annonce.titre}</h1>
@@ -543,7 +443,10 @@ export default function AnnonceDetailPage() {
                         </span>
                       )}
                       {annonce.statut === "expirée" ? (
-                        <p className="annonce-meta" style={{ fontWeight: 700, color: "#d55353" }}>
+                        <p
+                          className="annonce-meta"
+                          style={{ fontWeight: 700, color: "#d55353" }}
+                        >
                           Statut: Vendue
                         </p>
                       ) : null}
@@ -596,7 +499,42 @@ export default function AnnonceDetailPage() {
                       )}
                     </>
                   )}
-
+                  {isOwner && !isEditing && annonce.statut === "brouillon" && (
+                    <div className="annonce-draft-alert-box">
+                      <div>
+                        <p
+                          style={{
+                            fontWeight: 700,
+                            color: "#92400e",
+                            margin: 0,
+                          }}
+                        >
+                          Cette annonce est un brouillon
+                        </p>
+                        <p
+                          style={{
+                            fontSize: "14px",
+                            color: "#b45309",
+                            margin: "4px 0 0 0",
+                          }}
+                        >
+                          Elle n'est visible que par vous.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        style={{
+                          background: "#10b981",
+                          borderColor: "#10b981",
+                          width: "100%",
+                        }}
+                        onClick={() => setShowPublierModal(true)} // Ouvre la modale
+                      >
+                        Publier l'annonce
+                      </button>
+                    </div>
+                  )}
                   {isOwner && !isEditing && (
                     <div className="annonce-owner-actions">
                       <button
@@ -609,15 +547,23 @@ export default function AnnonceDetailPage() {
                       {annonce.statut !== "expirée" ? (
                         <button
                           className="btn btn-outline"
-                          onClick={handleMarkAsSold}
+                          onClick={() => setShowMarquerVenduModal(true)} // Ouvre la modale !
                           disabled={isMarkingSold}
                         >
-                          {isMarkingSold ? "Mise a jour..." : "Marquer comme vendue"}
+                          Marquer comme vendue
                         </button>
-                      ) : null}
+                      ) : (
+                        <button
+                          className="btn btn-outline"
+                          onClick={() => setShowAnnulerVenteModal(true)} // Ouvre la modale d'annulation
+                          disabled={isCancellingSold}
+                        >
+                          Annuler la vente
+                        </button>
+                      )}
                       <button
                         className="btn btn-outline"
-                        onClick={handleDelete}
+                        onClick={() => setShowSupprimerModal(true)} // Ouvre la modale à la place du confirm
                         disabled={isDeleting}
                       >
                         <FaTrashAlt /> {isDeleting ? "..." : "Supprimer"}
@@ -663,64 +609,46 @@ export default function AnnonceDetailPage() {
           </>
         ) : null}
 
-        {showSignalerModal && (
-          <div
-            className="modal-overlay"
-            onClick={() => setShowSignalerModal(false)}
-          >
-            <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h3>Signaler cette annonce</h3>
-                <button
-                  className="modal-close-btn"
-                  onClick={() => setShowSignalerModal(false)}
-                >
-                  <FaTimes />
-                </button>
-              </div>
-              <form onSubmit={handleSignaler} className="modal-form">
-                <label className="form-label">Motif *</label>
-                <select
-                  className="form-input"
-                  value={signalerMotif}
-                  onChange={(e) => setSignalerMotif(e.target.value)}
-                  required
-                >
-                  <option value="">-- Choisir un motif --</option>
-                  <option value="arnaque">Arnaque / Fraude</option>
-                  <option value="contenu_inapproprie">
-                    Contenu inapproprié
-                  </option>
-                  <option value="doublon">Doublon</option>
-                  <option value="prix_abusif">Prix abusif</option>
-                  <option value="autre">Autre</option>
-                </select>
+        <SignalerAnnonceModal
+          open={showSignalerModal}
+          onClose={() => setShowSignalerModal(false)}
+          onSubmit={handleSignaler}
+          signalerDesc={signalerDesc}
+          signalerError={signalerError}
+          signalerLoading={signalerLoading}
+          signalerMotif={signalerMotif}
+          signalerSuccess={signalerSuccess}
+          setSignalerDesc={setSignalerDesc}
+          setSignalerMotif={setSignalerMotif}
+        />
 
-                <label className="form-label">Description (optionnelle)</label>
-                <textarea
-                  className="form-input"
-                  rows={4}
-                  placeholder="Décrivez le problème..."
-                  value={signalerDesc}
-                  onChange={(e) => setSignalerDesc(e.target.value)}
-                />
+        <PublierAnnonceModal
+          open={showPublierModal}
+          onClose={() => setShowPublierModal(false)}
+          onConfirm={handlePublierAnnonce}
+          isPublishing={isPublishing}
+        />
 
-                {signalerError && <p className="form-error">{signalerError}</p>}
-                {signalerSuccess && (
-                  <p className="form-success">{signalerSuccess}</p>
-                )}
+        <SupprimerAnnonceModal
+          open={showSupprimerModal}
+          onClose={() => setShowSupprimerModal(false)}
+          onConfirm={handleDelete}
+          isDeleting={isDeleting}
+        />
 
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  disabled={signalerLoading || !signalerMotif}
-                >
-                  {signalerLoading ? "Envoi..." : "Envoyer le signalement"}
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
+        <MarquerVenduAnnonceModal
+          open={showMarquerVenduModal}
+          onClose={() => setShowMarquerVenduModal(false)}
+          onConfirm={handleMarkAsSold}
+          isMarkingSold={isMarkingSold}
+        />
+
+        <AnnulerVenteAnnonceModal
+          open={showAnnulerVenteModal}
+          onClose={() => setShowAnnulerVenteModal(false)}
+          onConfirm={handleCancelSold}
+          isCancellingSold={isCancellingSold}
+        />
       </main>
       <SiteFooter />
     </div>

@@ -1,0 +1,201 @@
+/* Toutes les annonces - détails annonces + images */
+.annonce-detail-page {
+  padding: 26px 34px 40px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.annonce-detail-breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: #6e6e6e;
+  font-size: 0.8rem;
+  margin-bottom: 14px;
+}
+
+.annonce-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.annonce-media-card,
+.annonce-summary-card,
+.annonce-vendeur-card,
+.annonce-description-card {
+  background: #fff;
+  border: 1px solid #e1e1e1;
+  border-radius: 8px;
+}
+
+.annonce-media-card {
+  padding: 12px;
+  margin-bottom: 15px;
+}
+
+.annonce-main-image-frame {
+  width: 100%;
+  height: clamp(280px, 34vh, 440px);
+  border-radius: 6px;
+  background: #f4f4f4;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.annonce-main-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  display: block;
+}
+
+.annonce-thumbs-row {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+}
+
+.annonce-thumb {
+  width: 64px;
+  height: 64px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #dadada;
+  background: #fff;
+}
+
+.annonce-thumb.active {
+  border-color: #58a6df;
+  box-shadow: 0 0 0 2px rgba(88, 166, 223, 0.2);
+}
+
+.annonce-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.annonce-delete-photo {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: red;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  z-index: 5;
+}
+
+.annonce-draft-alert-box {
+  background: #fffbeb;
+  border: 1px solid #fef3c7;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top:15px;
+  margin-bottom: 16px;
+  display:flex;
+  flex-direction: column;
+  gap:12px;
+}
+
+/* responsive */
+@media (min-width: 1850px) and (min-height: 850px) {
+  .annonce-detail-page {
+    padding: 18px 26px 0;
+    max-width: 1500px;
+  }
+
+  .annonce-detail-grid {
+    grid-template-columns: minmax(0, 1.35fr) minmax(340px, 0.65fr);
+    gap: 14px;
+    align-items: start;
+  }
+
+  .annonce-main-image {
+    height: 100%;
+  }
+
+  .annonce-main-image-frame {
+    height: 40vh;
+    min-height: 300px;
+    max-height: 480px;
+  }
+}
+
+@media (max-width: 1000px) {
+  .annonce-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .annonce-detail-page {
+    padding: 18px 16px 32px;
+    max-width: 100%;
+  }
+
+  .annonce-detail-breadcrumb {
+    gap: 6px;
+    font-size: 0.75rem;
+    margin-bottom: 10px;
+  }
+
+  .annonce-media-card,
+  .annonce-summary-card,
+  .annonce-vendeur-card,
+  .annonce-description-card {
+    border-radius: 10px;
+  }
+
+  .annonce-media-card,
+  .annonce-summary-card,
+  .annonce-vendeur-card,
+  .annonce-description-card {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .annonce-main-image {
+    height: 100%;
+  }
+
+  .annonce-main-image-frame {
+    height: clamp(210px, 36vh, 320px);
+  }
+
+  .annonce-thumbs-row {
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .annonce-thumb {
+    width: 56px;
+    height: 56px;
+    flex: 0 0 auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .annonce-detail-page {
+    padding: 14px 10px 28px;
+    max-width: 100%;
+  }
+
+  .annonce-main-image-frame {
+    height: clamp(190px, 34vh, 260px);
+  }
+}

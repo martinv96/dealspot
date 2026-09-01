@@ -5,13 +5,13 @@
   "main": "src/app.js",
   "type": "module",
   "scripts": {
-    "dev": "nodemon src/app.js",
-    "start": "node src/app.js",
-    "test": "node --test tests/**/*.test.js",
-    "test:unit": "node --test tests/unit/**/*.test.js",
-    "test:security": "node --test tests/security/**/*.test.js",
-    "test:functional": "node --test tests/functional/**/*.test.js"
-  },
+  "dev": "nodemon src/app.js",
+  "start": "node src/app.js",
+  "test": "node --test --experimental-test-coverage tests/**/*.test.js",
+  "test:unit": "node --test --experimental-test-coverage tests/unit/**/*.test.js",
+  "test:security": "node --test --experimental-test-coverage tests/security/**/*.test.js",
+  "test:functional": "node --test --experimental-test-coverage tests/functional/**/*.test.js"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -27,7 +27,9 @@
     "multer": "^2.1.1",
     "mysql2": "^3.20.0",
     "nodemailer": "^8.0.7",
-    "sequelize": "^6.37.8"
+    "resend": "^6.17.2",
+    "sequelize": "^6.37.8",
+    "sib-api-v3-sdk": "^8.5.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

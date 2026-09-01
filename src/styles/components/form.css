@@ -1,3 +1,4 @@
+/* formulaires (admin, profile, search, password) */
 .auth-page .auth-main {
   padding: 40px 20px 52px;
   min-height: 58vh;
@@ -89,7 +90,8 @@
 }
 
 .auth-bottom a {
-  color: #4a7dd2;
+  color: #3d6ec0;
+  font-weight: 600;
 }
 
 .form-error {
@@ -106,6 +108,7 @@
   font-weight: 600;
 }
 
+/* responsive */
 @media (max-width: 1000px) {
   .auth-page .auth-main {
     max-width: 100%;

@@ -1,5 +1,5 @@
 import { FaPercent } from "react-icons/fa";
-import logo from "../assets/logo3.png";
+import logo from "../assets/Logo4.png";
 import { Link } from "react-router-dom";
 
 export default function SiteFooter() {
@@ -23,18 +23,18 @@ export default function SiteFooter() {
         <div>
           <h4>Liens rapide</h4>
           <ul>
-            <Link to="/">Accueil</Link>
-            <Link to="/apropos">A propos</Link>
-            <Link to="/contact">Contactez-nous</Link>
-            <li>Aide</li>
+            <li><Link to="/">Accueil</Link></li>
+            <li><Link to="/a-propos">A propos</Link></li>
+            <li><Link to="/contact">Contactez-nous</Link></li>
+            <li><Link to="/cgv">Conditions générales de vente</Link></li>
           </ul>
         </div>
 
         <div>
           <h4>Contact</h4>
           <ul>
-            <li>Email : contact@email.fr</li>
-            <li>Tel : 06 54 86 78 58</li>
+            <li>Email : dealspot-no-reply@email.fr</li>
+            <li>Tel : 07 86 75 45 62</li>
           </ul>
         </div>
       </div>

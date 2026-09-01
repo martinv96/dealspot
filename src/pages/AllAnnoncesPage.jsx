@@ -3,10 +3,11 @@ import PrivateHeader from "../components/PrivateHeader";
 import PublicHeader from "../components/PublicHeader";
 import SiteFooter from "../components/SiteFooter";
 import ProductGrid from "../components/ProductGrid";
+import PaginationControls from "../components/PaginationControls";
 import { useAuth } from "../context/useAuth";
 import api from "../services/api";
 
-const PAGE_SIZE = 3;
+const PAGE_SIZE = 10;
 const EMPTY_FILTERS = {
   query: "",
   categorie: "",
@@ -212,16 +213,13 @@ export default function AllAnnoncesPage() {
           {!isLoading && error ? <p className="form-error">{error}</p> : null}
           {!isLoading && !error ? <ProductGrid items={cards} /> : null}
 
-          {!isLoading && !error && totalPages > 1 ? (
-            <div style={{ marginTop: "1rem", display: "flex", justifyContent: "center", gap: "0.75rem", alignItems: "center" }}>
-              <button className="btn btn-outline" type="button" onClick={() => goToPage(currentPage - 1)} disabled={currentPage <= 1}>
-                Precedent
-              </button>
-              <span>Page {currentPage} / {totalPages}</span>
-              <button className="btn btn-outline" type="button" onClick={() => goToPage(currentPage + 1)} disabled={currentPage >= totalPages}>
-                Suivant
-              </button>
-            </div>
+          {!isLoading && !error ? (
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPrevious={() => goToPage(currentPage - 1)}
+              onNext={() => goToPage(currentPage + 1)}
+            />
           ) : null}
         </section>
       </main>

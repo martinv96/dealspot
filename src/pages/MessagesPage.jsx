@@ -4,6 +4,7 @@ import { FaPaperPlane, FaRegCommentDots, FaTimes, FaUserCircle } from "react-ico
 import PrivateHeader from "../components/PrivateHeader";
 import SiteFooter from "../components/SiteFooter";
 import { useAuth } from "../context/useAuth";
+import SupprimerMessageModal from "../components/messages/SupprimerMessageModal";
 import api from "../services/api";
 
 function formatTime(dateValue) {
@@ -42,6 +43,11 @@ export default function MessagesPage() {
   const endRef = useRef(null);
   const previousThreadLengthRef = useRef(0);
   const selectedRef = useRef(null);
+  const hasInitializedRef = useRef(false);
+
+  const [showSupprimerModal, setShowSupprimerModal] = useState(false);
+const [conversationToDelete, setConversationToDelete] = useState(null);
+const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     selectedRef.current = selected;
@@ -156,7 +162,13 @@ export default function MessagesPage() {
     }
   }, []);
 
+  // permet le changement de conversation
   useEffect(() => {
+    if (hasInitializedRef.current) {
+      return;
+    }
+    hasInitializedRef.current = true;
+
     async function init() {
       try {
         setLoadingList(true);
@@ -218,7 +230,11 @@ export default function MessagesPage() {
   async function handleSend(e) {
     e.preventDefault();
     const contenu = draft.trim();
-    if (!contenu || !selected?.otherUser?.id) return;
+    if (!contenu) return;
+    if (!selected?.otherUser?.id) {
+      setError("Sélectionnez une conversation à gauche, ou contactez un vendeur depuis une annonce pour en démarrer une.");
+      return;
+    }
 
     try {
       setSendLoading(true);
@@ -232,30 +248,43 @@ export default function MessagesPage() {
       await loadConversations(true);
       setSearchParams({});
     } catch (err) {
-      setError(err?.response?.data?.message || "Envoi impossible.");
+      setError(err?.response?.data?.message || "L'envoi du message a échoué. Réessayez.");
     } finally {
       setSendLoading(false);
     }
   }
 
-  async function handleDeleteConversation(conv) {
-    const confirmed = window.confirm("Supprimer cette conversation ?");
-    if (!confirmed) return;
+  // Déclenché par la croix dans la liste
+  function handleDeleteConversation(conv) {
+    setConversationToDelete(conv);
+    setShowSupprimerModal(true);
+  }
+
+  // Déclenché au clic sur "Supprimer la discussion" dans la modale
+  async function handleSupprimerConversationConfirm() {
+    if (!conversationToDelete) return;
+    const conv = conversationToDelete;
 
     try {
+      setDeleteLoading(true);
       await api.delete(`/messages/threads/${conv.otherUser.id}`, {
         params: conv.annonceId ? { annonceId: conv.annonceId } : undefined
       });
 
       const removedKey = `${conv.otherUser.id}-${conv.annonceId || 0}`;
       setConversations((prev) => prev.filter((item) => `${item.otherUser.id}-${item.annonceId || 0}` !== removedKey));
+      
       if (selectedKey === removedKey) {
         setSelected(null);
         setThread([]);
       }
       await loadConversations(false);
+      setShowSupprimerModal(false);
     } catch (err) {
       setError(err?.response?.data?.message || "Suppression impossible.");
+    } finally {
+      setDeleteLoading(false);
+      setConversationToDelete(null);
     }
   }
 
@@ -298,21 +327,11 @@ export default function MessagesPage() {
                     <div
                       key={key}
                       className={`messages-conversation-item${isActive ? " active" : ""}`}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => {
-                        setSelected(conv);
-                        setConversations((prev) =>
-                          prev.map((item) => {
-                            const itemKey = `${item.otherUser.id}-${item.annonceId || 0}`;
-                            return itemKey === key ? { ...item, unreadCount: 0 } : item;
-                          })
-                        );
-                        setSearchParams({});
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
+                    >
+                      <button
+                        type="button"
+                        className="messages-conversation-item-trigger"
+                        onClick={() => {
                           setSelected(conv);
                           setConversations((prev) =>
                             prev.map((item) => {
@@ -321,15 +340,15 @@ export default function MessagesPage() {
                             })
                           );
                           setSearchParams({});
-                        }
-                      }}
-                    >
-                      <div className="messages-conversation-avatar"><FaUserCircle /></div>
-                      <div className="messages-conversation-body">
-                        <strong>{conv.otherUser.pseudo}</strong>
-                        <span>{conv.annonce?.titre || "Conversation"}</span>
-                        <p>{conv.lastMessage || "Commencer la discussion"}</p>
-                      </div>
+                        }}
+                      >
+                        <div className="messages-conversation-avatar"><FaUserCircle /></div>
+                        <div className="messages-conversation-body">
+                          <strong>{conv.otherUser.pseudo}</strong>
+                          <span>{conv.annonce?.titre || "Conversation"}</span>
+                          <p>{conv.lastMessage || "Commencer la discussion"}</p>
+                        </div>
+                      </button>
                       <div className="messages-conversation-meta">
                         <span>{formatTime(conv.lastDate)}</span>
                         {!isActive && conv.unreadCount > 0 ? <em>{conv.unreadCount}</em> : null}
@@ -359,7 +378,7 @@ export default function MessagesPage() {
                 <header className="messages-thread-head">
                   <div>
                     <strong>{selected.otherUser.pseudo}</strong>
-                    <p>{selected.annonce?.titre || "Conversation generale"}</p>
+                    <p>{selected.annonce?.titre || "Conversation générale"}</p>
                   </div>
                   {selected.annonce?.id ? (
                     <Link to={`/annonces/${selected.annonce.id}`} className="btn btn-outline messages-annonce-link">
@@ -406,7 +425,12 @@ export default function MessagesPage() {
                     onChange={(e) => setDraft(e.target.value)}
                     placeholder="Ecrivez votre message..."
                   />
-                  <button type="submit" className="btn btn-contact" disabled={sendLoading || !draft.trim()}>
+                  <button
+                    type="submit"
+                    className="btn btn-contact"
+                    disabled={sendLoading || !draft.trim()}
+                    aria-label="Envoyer le message"
+                  >
                     <FaPaperPlane />
                   </button>
                 </form>
@@ -414,11 +438,20 @@ export default function MessagesPage() {
             ) : (
               <div className="messages-thread-empty">
                 <FaRegCommentDots />
-                <p>Selectionnez une conversation a gauche.</p>
+                <p>Selectionnez une conversation à gauche.</p>
               </div>
             )}
           </section>
         </section>
+        <SupprimerMessageModal
+          open={showSupprimerModal}
+          onClose={() => {
+            setShowSupprimerModal(false);
+            setConversationToDelete(null);
+          }}
+          onConfirm={handleSupprimerConversationConfirm}
+          isDeleting={deleteLoading}
+        />
       </main>
 
       <SiteFooter />

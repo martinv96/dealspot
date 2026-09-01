@@ -1,14 +1,18 @@
 import db from "../models/index.js";
 
+// ce controller gère l'ajout, la liste et la suppression des favoris utilisateur
+
 const Favorite = db.Favorite;
 const Annonce = db.Annonce;
 
 function toInt(value) {
+  // convertit en entier ou null si invalide
   const n = Number.parseInt(value, 10);
   return Number.isNaN(n) ? null : n;
 }
 
 function normalizeImages(rawImages) {
+  // normalise le format images même si la base contient du json string
   if (Array.isArray(rawImages)) {
     return rawImages
       .filter((value) => typeof value === "string")
@@ -32,6 +36,7 @@ function normalizeImages(rawImages) {
 }
 
 function serializeAnnonce(annonce) {
+  // dto réduit pour éviter d'envoyer des champs inutiles au front favoris
   if (!annonce) return null;
 
   const plain = typeof annonce.toJSON === "function" ? annonce.toJSON() : annonce;
@@ -49,6 +54,8 @@ function serializeAnnonce(annonce) {
 
 export async function listFavorites(req, res) {
   try {
+    // but: retourner la liste favoris du compte connecté
+    // on joint les annonces puis on sérialise dans un format léger
     const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ message: "Token invalide." });
@@ -88,6 +95,8 @@ export async function listFavorites(req, res) {
 
 export async function addFavorite(req, res) {
   try {
+    // but: ajouter une annonce en favori sans créer de doublon
+    // findOrCreate rend l'opération idempotente côté api
     const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ message: "Token invalide." });
@@ -120,6 +129,8 @@ export async function addFavorite(req, res) {
 
 export async function removeFavorite(req, res) {
   try {
+    // but: retirer un favori du compte connecté
+    // la suppression est silencieuse si la ligne est déjà absente
     const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ message: "Token invalide." });

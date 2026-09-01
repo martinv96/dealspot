@@ -23,7 +23,7 @@ export default function ForgotPasswordPage() {
     try {
       setLoading(true);
       const { data } = await api.post("/auth/forgot-password", { email: email.trim() });
-      setSuccess(data?.message || "Si un compte existe, un email a ete envoye.");
+      setSuccess(data?.message || "Si un compte existe, un email à été envoyé.");
     } catch (requestError) {
       setError(requestError?.response?.data?.message || "Demande impossible.");
     } finally {
@@ -37,15 +37,15 @@ export default function ForgotPasswordPage() {
 
       <main className="page-main auth-main">
         <form className="auth-card auth-card-wide" onSubmit={handleSubmit}>
-          <h3>Mot de passe oublie</h3>
-          <p>Entrez votre email pour recevoir un lien de reinitialisation.</p>
+          <h3>Mot de passe oublié</h3>
+          <p>Entrez votre email pour recevoir un lien de réinitialisation.</p>
 
           <label>Email</label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="Ex: alain.dupont@mail.fr"
+            placeholder="Ex: martinv@email.fr"
             required
           />
 
@@ -57,7 +57,7 @@ export default function ForgotPasswordPage() {
           </button>
 
           <p className="auth-bottom">
-            <Link to="/connexion">Retour a la connexion</Link>
+            <Link to="/login">Retour à la connexion</Link>
           </p>
         </form>
       </main>

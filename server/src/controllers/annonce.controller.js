@@ -1,13 +1,16 @@
 import db from "../models/index.js";
 import jwt from "jsonwebtoken";
-import { Op } from "sequelize";
+import { Op, col, fn } from "sequelize";
 import { deleteImagesByUrls, uploadImages } from "../services/cloudinary.service.js";
+
+// ce controller gère le cycle de vie d'une annonce côté utilisateur
 const Annonce = db.Annonce;
 const User = db.User;
 
 const MAX_LIMIT = 50;
 
 function parseLimit(rawLimit, fallback = 20) {
+  // borne haute côté api pour éviter les requêtes trop lourdes
   const parsed = Number.parseInt(rawLimit, 10);
   if (Number.isNaN(parsed) || parsed <= 0) {
     return fallback;
@@ -16,6 +19,7 @@ function parseLimit(rawLimit, fallback = 20) {
 }
 
 function parsePage(rawPage, fallback = 1) {
+  // garde une pagination stable même si le front envoie une valeur invalide
   const parsed = Number.parseInt(rawPage, 10);
   if (Number.isNaN(parsed) || parsed <= 0) {
     return fallback;
@@ -24,6 +28,7 @@ function parsePage(rawPage, fallback = 1) {
 }
 
 function sanitizeImages(rawImages) {
+  // on garde uniquement des urls valides et on limite à 5 images
   if (!Array.isArray(rawImages)) {
     return [];
   }
@@ -37,6 +42,7 @@ function sanitizeImages(rawImages) {
 }
 
 function normalizeImages(rawImages) {
+  // accepte tableau ou string json et retourne toujours un tableau filtré
   if (Array.isArray(rawImages)) {
     return sanitizeImages(rawImages);
   }
@@ -67,6 +73,7 @@ function normalizeImages(rawImages) {
 }
 
 function serializeAnnonce(annonce) {
+  // shape de réponse unique pour toutes les routes annonces
   if (!annonce) {
     return annonce;
   }
@@ -79,6 +86,7 @@ function serializeAnnonce(annonce) {
 }
 
 async function getUploadedImageUrls(req) {
+  // les fichiers envoyés passent par cloudinary avant sauvegarde
   if (!Array.isArray(req.files) || req.files.length === 0) {
     return [];
   }
@@ -87,6 +95,7 @@ async function getUploadedImageUrls(req) {
 }
 
 function getAuthenticatedUserIdFromHeader(req) {
+  // permet de laisser voir une annonce expirée uniquement à son propriétaire
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return null;
@@ -103,9 +112,13 @@ function getAuthenticatedUserIdFromHeader(req) {
 
 export const createAnnonce = async (req, res) => {
   try {
+    // but: créer une annonce avec ou sans images uploadées
+    // 1) on lit les champs validés
+    // 2) on tente l'upload des fichiers reçus
+    // 3) on persiste l'annonce avec un statut par défaut "active"
     const { titre, description, prix, categorie, localisation, statut, images } = req.validatedBody || req.body;
 
-    // L'id de l'utilisateur viendra normalement du middleware auth (req.user.id)
+    // l'id vient du middleware auth
     const userId = req.user.id; 
 
     const uploadedImages = await getUploadedImageUrls(req);
@@ -116,7 +129,7 @@ export const createAnnonce = async (req, res) => {
       prix,
       categorie,
       localisation,
-      statut: statut || "active", // Si pas de statut, on met 'active'
+      statut: statut || "active", // sans statut explicite on publie en active
       images: uploadedImages.length > 0 ? uploadedImages : sanitizeImages(images),
       user_id: userId
     });
@@ -133,6 +146,8 @@ export const createAnnonce = async (req, res) => {
 
 export const listPublishedAnnonces = async (req, res) => {
   try {
+    // but: endpoint public de recherche d'annonces actives
+    // on combine pagination + filtres texte/catégorie/ville/prix max
     const limit = parseLimit(req.query.limit, 24);
     const page = parsePage(req.query.page, 1);
     const offset = (page - 1) * limit;
@@ -190,25 +205,70 @@ export const listPublishedAnnonces = async (req, res) => {
 
 export const listMyAnnonces = async (req, res) => {
   try {
+    // but: retourner uniquement les annonces du compte connecté
+    // le filtre statut reste optionnel pour simplifier le front
     if (!req.user || !req.user.id) {
       return res.status(401).json({ message: "Token invalide." });
     }
 
-    const limit = parseLimit(req.query.limit, 50);
-    const statut = req.query.statut;
+    const limit = parseLimit(req.query.limit, 12);
+    const page = parsePage(req.query.page, 1);
+    const offset = (page - 1) * limit;
+    const statut = typeof req.query.statut === "string" ? req.query.statut.trim() : "";
     const where = { user_id: req.user.id };
 
     if (statut) {
       where.statut = statut;
     }
 
-    const annonces = await Annonce.findAll({
+    const [annonces, statusRows, totalCount] = await Promise.all([
+      Annonce.findAll({
       where,
       order: [["date_publication", "DESC"]],
-      limit
-    });
+      limit,
+      offset
+      }),
+      Annonce.findAll({
+        where: { user_id: req.user.id },
+        attributes: ["statut", [fn("COUNT", col("id")), "count"]],
+        group: ["statut"],
+        raw: true
+      }),
+      Annonce.count({ where })
+    ]);
 
-    res.json({ annonces: annonces.map(serializeAnnonce) });
+    const counts = statusRows.reduce(
+      (acc, row) => {
+        const count = Number(row.count || 0);
+
+        if (row.statut === "expirée" || row.statut === "expiree") {
+          return { ...acc, vendues: count };
+        }
+
+        if (row.statut === "active") {
+          return { ...acc, active: count };
+        }
+
+        if (row.statut === "brouillon") {
+          return { ...acc, brouillon: count };
+        }
+
+        return acc;
+      },
+      {
+        active: 0,
+        vendues: 0,
+        brouillon: 0
+      }
+    );
+
+    res.json({
+      annonces: annonces.map(serializeAnnonce),
+      page,
+      total: totalCount,
+      pages: Math.max(1, Math.ceil(totalCount / limit)),
+      counts
+    });
   } catch (error) {
     console.error("Erreur listMyAnnonces:", error);
     res.status(500).json({ message: "Erreur récupération de vos annonces", error: error.message });
@@ -217,6 +277,8 @@ export const listMyAnnonces = async (req, res) => {
 
 export const getAnnonceById = async (req, res) => {
   try {
+    // but: afficher le détail d'une annonce
+    // règle métier: une annonce non active n'est visible que par son propriétaire
     const annonceId = Number.parseInt(req.params.id, 10);
     if (Number.isNaN(annonceId)) {
       return res.status(400).json({ message: "ID annonce invalide." });
@@ -245,6 +307,10 @@ export const getAnnonceById = async (req, res) => {
 
 export const deleteMyAnnonce = async (req, res) => {
   try {
+    // but: suppression propriétaire
+    // 1) auth
+    // 2) validation id + contrôle ownership
+    // 3) nettoyage images puis suppression sql
     if (!req.user || !req.user.id) {
       return res.status(401).json({ message: "Token invalide." });
     }
@@ -274,6 +340,8 @@ export const deleteMyAnnonce = async (req, res) => {
 
 export const updateMyAnnonce = async (req, res) => {
   try {
+    // but: édition propriétaire d'une annonce avec support images
+    // ce flux garde la main au front sur les images à conserver
     if (!req.user || !req.user.id) {
       return res.status(401).json({ message: "Token invalide." });
     }
@@ -291,26 +359,22 @@ export const updateMyAnnonce = async (req, res) => {
     if (annonce.user_id !== req.user.id) {
       return res.status(403).json({ message: "Modification non autorisée." });
     }
-
-    // On récupère 'existingImages' depuis le body (envoyé par le front)
+    // existingImages indique ce que le front veut conserver après édition
     const { titre, description, prix, categorie, localisation, statut, existingImages } = req.validatedBody || req.body;
     const newUploadedImages = await getUploadedImageUrls(req);
     const currentImages = normalizeImages(annonce.images);
-
-    // Mise à jour des champs textes
+    // mise à jour des champs texte
     annonce.titre = titre ?? annonce.titre;
     annonce.description = description ?? annonce.description;
     annonce.prix = prix ?? annonce.prix;
     annonce.categorie = categorie ?? annonce.categorie;
     annonce.localisation = localisation ?? annonce.localisation;
     annonce.statut = statut ?? annonce.statut;
-
-    // GESTION DES IMAGES
+    // gestion des images: garder, ajouter, limiter, puis nettoyer les supprimées
     let finalImages = [];
-
-    // 1. On prend les images que le front nous dit de garder
+    // 1) on garde seulement les images demandées par le front
     if (existingImages !== undefined) {
-      // Si existingImages est envoyé via FormData, c'est parfois une string JSON, on la parse
+      // existingImages peut arriver en json string via formdata
       if (typeof existingImages === "string") {
         try {
           finalImages = normalizeImages(JSON.parse(existingImages));
@@ -321,19 +385,16 @@ export const updateMyAnnonce = async (req, res) => {
         finalImages = normalizeImages(existingImages);
       }
     } else {
-      // Si le front n'envoie rien du tout, on garde les images actuelles (meme si stockees en string JSON)
+      // sans instruction du front, on conserve l'état courant
       finalImages = normalizeImages(annonce.images);
     }
-
-    // 2. On ajoute les nouvelles photos uploadées
+    // 2) on ajoute les nouvelles photos uploadées
     if (newUploadedImages.length > 0) {
       finalImages = [...finalImages, ...newUploadedImages];
     }
-
-    // 3. On applique la limite de 5 et on enregistre
+    // 3) on applique la limite de 5 et on enregistre
     annonce.images = sanitizeImages(finalImages.slice(0, 5));
-
-    // 4. Nettoyage des images retirées (Cloudinary uniquement, no-op en local)
+    // 4) nettoyage cloudinary des images retirées
     const removedImages = currentImages.filter((imageUrl) => !annonce.images.includes(imageUrl));
     await deleteImagesByUrls(removedImages);
 
@@ -343,4 +404,44 @@ export const updateMyAnnonce = async (req, res) => {
     console.error("Erreur updateMyAnnonce:", error);
     return res.status(500).json({ message: "Erreur modification annonce.", error: error.message });
   }
+}
+export const publishAnnonce = async (req, res) => {
+  try {
+    // 1. Je vérifie que l'utilisateur est bien connecté
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: "Token invalide." });
+    }
+
+    const annonceId = Number.parseInt(req.params.id, 10);
+    const annonce = await Annonce.findByPk(annonceId);
+
+    if (!annonce) {
+      return res.status(404).json({ message: "Annonce introuvable." });
+    }
+
+    // 2. Je vérifie que l'utilisateur connecté est bien le propriétaire de l'annonce
+    if (annonce.user_id !== req.user.id) {
+      return res.status(403).json({ message: "Action non autorisée." });
+    }
+
+    // 3. SÉCURITÉ CRITIQUE : Je m'assure que l'annonce est bien un brouillon au départ
+    // Si elle est déjà active, ou archivée, ou bloquée par la modération, je refuse l'opération.
+    if (annonce.statut !== "brouillon") {
+      return res.status(400).json({ 
+        message: "Seules les annonces en mode brouillon peuvent être publiées." 
+      });
+    }
+
+    // 4. Si tous les feux sont au vert, je passe le statut à "active" et je sauvegarde
+    annonce.statut = "active";
+    await annonce.save();
+
+    return res.json({ 
+      message: "Votre annonce a été publiée avec succès !", 
+      annonce: serializeAnnonce(annonce) 
+    });
+  } catch (error) {
+    console.error("Erreur publishAnnonce:", error);
+    return res.status(500).json({ message: "Erreur lors de la publication." });
+};
 };

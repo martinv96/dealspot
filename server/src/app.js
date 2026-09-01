@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import { DataTypes } from "sequelize";
 import path from "path";
+import dns from "node:dns";
 import { fileURLToPath } from "url";
 import "./config/env.js";
 import { sequelize } from "./config/database.js";
@@ -11,9 +12,14 @@ import messageRoutes from "./routes/message.routes.js";
 import reportRoutes from "./routes/report.routes.js";
 import favoriteRoutes from "./routes/favorite.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
+import geocodeRoutes from "./routes/geocode.routes.js";
 import "./models/index.js";
 import connectMongo from './config/mongo.js';
 import contactRoutes from './routes/contact.routes.js';
+
+if (String(process.env.DNS_RESULT_ORDER || "ipv4first").toLowerCase() === "ipv4first") {
+  dns.setDefaultResultOrder("ipv4first");
+}
 
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
@@ -96,6 +102,7 @@ app.use("/api/reports", reportRoutes);
 app.use("/api/favorites", favoriteRoutes);
 app.use('/api/contact', contactRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/geocode", geocodeRoutes);
 
 app.use((error, _req, res, next) => {
   if (!error) {

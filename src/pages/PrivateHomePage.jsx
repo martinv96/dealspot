@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import CategoryExplorerSection from "../components/CategoryExplorerSection";
 import PrivateHeader from "../components/PrivateHeader";
 import SiteFooter from "../components/SiteFooter";
 import ProductGrid from "../components/ProductGrid";
@@ -55,6 +56,7 @@ export default function PrivateHomePage() {
   const { user } = useAuth();
   const [publishedAnnonces, setPublishedAnnonces] = useState([]);
   const [myAnnonces, setMyAnnonces] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -66,7 +68,7 @@ export default function PrivateHomePage() {
 
         const [publishedResponse, mineResponse] = await Promise.all([
           api.get("/annonces", { params: { limit: 6, page: 1 } }),
-          api.get("/annonces/me", { params: { limit: 200 } })
+          api.get("/annonces/me", { params: { limit: 6, page: 1, statut: "active" } })
         ]);
 
         setPublishedAnnonces(publishedResponse.data?.annonces || []);
@@ -82,11 +84,21 @@ export default function PrivateHomePage() {
   }, []);
 
   const publishedCards = useMemo(
-    () => publishedAnnonces.slice(0, 6).map(mapAnnonceToCard),
+    () => publishedAnnonces.map(mapAnnonceToCard),
     [publishedAnnonces]
   );
+  const filteredPublishedCards = useMemo(() => {
+    if (!selectedCategory) {
+      return publishedCards;
+    }
+
+    return publishedCards.filter((card) => {
+      const annonce = publishedAnnonces.find((item) => item.id === card.id);
+      return annonce && annonce.categorie === selectedCategory;
+    });
+  }, [publishedAnnonces, publishedCards, selectedCategory]);
   const myActiveCards = useMemo(
-    () => myAnnonces.filter((annonce) => annonce.statut === "active").slice(0, 6).map(mapAnnonceToCard),
+    () => myAnnonces.map(mapAnnonceToCard),
     [myAnnonces]
   );
 
@@ -100,6 +112,7 @@ export default function PrivateHomePage() {
           <p>Découvrez les annonces du site près de chez vous</p>
         </section>
 
+
         <section className="section listings-section">
           <div className="section-head">
             <h2>Mes annonces en 1 clic</h2>
@@ -110,12 +123,13 @@ export default function PrivateHomePage() {
           {!isLoading && !error ? <ProductGrid items={myActiveCards} showBadge /> : null}
         </section>
 
+        <CategoryExplorerSection selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} />
         <section className="section listings-section">
           <div className="section-head">
             <h2>Annonces du site</h2>
             <Link to="/annonces" className="btn btn-outline">Voir tout</Link>
           </div>
-          {isLoading ? null : !error ? <ProductGrid items={publishedCards} /> : null}
+          {isLoading ? null : !error ? <ProductGrid items={filteredPublishedCards} /> : null}
         </section>
       </main>
 

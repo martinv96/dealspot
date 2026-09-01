@@ -4,6 +4,7 @@ import {
 	deleteMyAnnonce,
 	getAnnonceById,
 	listMyAnnonces,
+	publishAnnonce,
 	listPublishedAnnonces,
 	updateMyAnnonce
 } from "../controllers/annonce.controller.js";
@@ -13,6 +14,7 @@ import { validateAnnonceBody, validateBody } from "../middleware/validation.js";
 
 const router = express.Router();
 
+router.patch("/:id/publish", authMiddleware, publishAnnonce);
 router.get("/", listPublishedAnnonces);
 router.get("/me", authMiddleware, listMyAnnonces);
 router.get("/:id", getAnnonceById);

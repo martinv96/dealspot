@@ -19,20 +19,31 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import AProposPage from "./pages/AProposPage";
 import ContactPage from "./pages/ContactPage";
 import AdminPage from "./pages/AdminPage";
+import CgvPage from "./pages/CgvPage";
+import { Error403Page, Error404Page, Error429Page, Error500Page, ErrorDefaultPage } from "./pages/ErrorPage";
 
 const DEFAULT_SEO = {
   title: "DealSpot - Petites annonces locales",
   description:
-    "DealSpot vous aide a acheter et vendre localement: annonces, messagerie, favoris et profils vendeurs.",
+    "DealSpot vous aide à acheter et vendre localement: annonces, messagerie, favoris et profils vendeurs.",
   robots: "index, follow"
 };
 
-function getSeoConfig(pathname) {
+function getSeoConfig(pathname, isAuthenticated) {
   if (pathname === "/") {
+    if (isAuthenticated) {
+      return {
+        title: "Espace utilisateur - DealSpot",
+        description:
+          "Connectez-vous à votre espace DealSpot pour gérer vos annonces, favoris, messages et profil.",
+        robots: "noindex, nofollow"
+      };
+    }
+
     return {
       title: "DealSpot - Achetez et vendez localement",
       description:
-        "Decouvrez des annonces pres de chez vous sur DealSpot. Achetez, vendez et echangez en toute simplicite.",
+        "Decouvrez des annonces près de chez vous sur DealSpot. Achetez, vendez et échangez en toute simplicité.",
       robots: "index, follow"
     };
   }
@@ -41,7 +52,7 @@ function getSeoConfig(pathname) {
     return {
       title: "Toutes les annonces - DealSpot",
       description:
-        "Parcourez toutes les annonces DealSpot par categorie, prix et localisation.",
+        "Parcourez toutes les annonces DealSpot par catégorie, prix et localisation.",
       robots: "index, follow"
     };
   }
@@ -50,12 +61,12 @@ function getSeoConfig(pathname) {
     return {
       title: "Detail annonce - DealSpot",
       description:
-        "Consultez les details de l'annonce, les photos, la localisation et contactez le vendeur sur DealSpot.",
+        "Consultez les détails de l'annonce, les photos, la localisation et contactez le vendeur sur DealSpot.",
       robots: "index, follow"
     };
   }
 
-  if (pathname === "/apropos") {
+  if (pathname === "/a-propos") {
     return {
       title: "A propos - DealSpot",
       description:
@@ -68,7 +79,7 @@ function getSeoConfig(pathname) {
     return {
       title: "Contact - DealSpot",
       description:
-        "Contactez l'equipe DealSpot pour toute question liee aux annonces et a votre compte.",
+        "Contactez l'équipe DealSpot pour toute question liée aux annonces et à votre compte.",
       robots: "index, follow"
     };
   }
@@ -83,12 +94,11 @@ function getSeoConfig(pathname) {
   }
 
   if (
-    pathname === "/connexion" ||
-    pathname === "/inscription" ||
-    pathname === "/verification-email" ||
-    pathname === "/mot-de-passe-oublie" ||
-    pathname === "/reinitialiser-mot-de-passe" ||
-    pathname === "/app" ||
+    pathname === "/login" ||
+    pathname === "/register" ||
+    pathname === "/verify-email" ||
+    pathname === "/forgot-password" ||
+    pathname === "/reset-password" ||
     pathname === "/admin" ||
     pathname === "/profil" ||
     pathname === "/messages" ||
@@ -99,7 +109,7 @@ function getSeoConfig(pathname) {
     return {
       title: "Espace utilisateur - DealSpot",
       description:
-        "Connectez-vous a votre espace DealSpot pour gerer vos annonces, favoris, messages et profil.",
+        "Connectez-vous à votre espace DealSpot pour gérer vos annonces, favoris, messages et profil.",
       robots: "noindex, nofollow"
     };
   }
@@ -129,9 +139,10 @@ function setCanonical(href) {
 
 function SeoManager() {
   const location = useLocation();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
-    const seo = getSeoConfig(location.pathname);
+    const seo = getSeoConfig(location.pathname, isAuthenticated);
     const canonicalUrl = window.location.origin + location.pathname;
 
     document.title = seo.title;
@@ -145,16 +156,33 @@ function SeoManager() {
     setMeta("twitter:title", seo.title);
     setMeta("twitter:description", seo.description);
     setCanonical(canonicalUrl);
-  }, [location.pathname]);
+  }, [isAuthenticated, location.pathname]);
 
   return null;
+}
+
+function ScrollToTop () {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo ({ top: 0, left: 0, behavior: "auto" });
+  }, [pathname]);
+
+  return null;
+}
+
+function RootRoute() {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) return <div className="center-loader">Chargement en cours...</div>;
+  return isAuthenticated ? <PrivateHomePage /> : <HomePage />;
 }
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) return <div className="center-loader">Chargement en cours...</div>;
-  if (!isAuthenticated) return <Navigate to="/connexion" replace />;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
   return children;
 }
 
@@ -162,8 +190,8 @@ function AdminRoute({ children }) {
   const { isAuthenticated, loading, user } = useAuth();
 
   if (loading) return <div className="center-loader">Chargement en cours...</div>;
-  if (!isAuthenticated) return <Navigate to="/connexion" replace />;
-  if (user?.role !== "admin") return <Navigate to="/app" replace />;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (user?.role !== "admin") return <Navigate to="/" replace />;
   return children;
 }
 
@@ -172,18 +200,21 @@ export default function App() {
     <>
       <SeoManager />
 
+      <ScrollToTop />
+
       <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/apropos" element={<AProposPage />} />
-        <Route path="/connexion" element={<LoginPage />} />
+        <Route path="/" element={<RootRoute />} />
+        <Route path="/a-propos" element={<AProposPage />} />
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/contact" element={<ContactPage />} />
-        <Route path="/inscription" element={<RegisterPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route path="/verification-email" element={<VerifyPage />} />
         <Route path="/mot-de-passe-oublie" element={<ForgotPasswordPage />} />
         <Route path="/reinitialiser-mot-de-passe" element={<ResetPasswordPage />} />
         <Route path="/annonces" element={<AllAnnoncesPage />} />
         <Route path="/annonces/:id" element={<AnnonceDetailPage />} />
         <Route path="/vendeurs/:id" element={<UserProfilePage />} />
+        <Route path="/cgv" element={<CgvPage />} />
         <Route
           path="/favoris"
           element={
@@ -224,14 +255,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/app"
-          element={
-            <ProtectedRoute>
-              <PrivateHomePage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/app" element={<Navigate to="/" replace />} />
         <Route
           path="/admin"
           element={
@@ -240,6 +264,12 @@ export default function App() {
             </AdminRoute>
           }
         />
+        <Route path="/403" element={<Error403Page />} />
+        <Route path="/404" element={<Error404Page />} />
+        <Route path="/429" element={<Error429Page />} />
+        <Route path="/500" element={<Error500Page />} />
+        <Route path="/erreur" element={<ErrorDefaultPage />} />        
+        <Route path="*" element={<Error404Page />} />      
       </Routes>
     </>
   );

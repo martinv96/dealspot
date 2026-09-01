@@ -1,0 +1,204 @@
+/* Toutes les annonces - boutons / prix / input */
+.annonce-side-col {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.annonce-summary-card {
+  padding: 16px;
+}
+
+.annonce-summary-card h1 {
+  font-size: 2rem;
+  margin-bottom: 8px;
+  line-height: 1.2;
+}
+
+.annonce-price {
+  font-size: 2rem;
+  color: var(--blue-price);
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.annonce-meta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.9rem;
+  color: #6d6d6d;
+  margin-top: 6px;
+}
+
+.annonce-summary-card .btn {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.annonce-owner-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.annonce-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.annonce-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.annonce-edit-form {
+  display: grid;
+  gap: 8px;
+}
+
+.annonce-edit-form label {
+  font-size: 0.84rem;
+  color: #585858;
+  font-weight: 600;
+}
+
+.annonce-edit-form input,
+.annonce-edit-form textarea,
+.annonce-edit-form select {
+  width: 100%;
+  border: 1px solid #dadada;
+  border-radius: 8px;
+  padding: 9px 10px;
+  font-size: 0.9rem;
+  background: #fff;
+}
+
+.annonce-edit-form textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.annonce-categorie-badge {
+  display: inline-block;
+  background: #eef2fb;
+  color: #3b69c0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 20px;
+  padding: 3px 12px;
+  margin: 6px 0 10px;
+}
+
+.annonce-visitor-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.btn-contact {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  background: #1e7a45;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 11px 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-contact:hover {
+  background: #1e9152;
+}
+
+.annonce-visitor-secondary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.annonce-visitor-secondary .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.annonce-vendeur-profil {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.annonce-signaler-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 0.82rem;
+  cursor: pointer;
+  padding: 4px 0;
+  margin-top: 4px;
+  transition: color 0.15s;
+}
+
+.annonce-signaler-btn:hover {
+  color: #c0392b;
+}
+
+/* responsive */
+@media (min-width: 1850px) and (min-height: 850px) {
+  .annonce-summary-card {
+    padding: 12px;
+  }
+
+  .annonce-summary-card h1,
+  .annonce-price {
+    font-size: 1.75rem;
+    margin-bottom: 6px;
+  }
+
+  .annonce-side-col {
+    gap: 8px;
+  }
+}
+
+@media (max-width: 700px) {
+  .annonce-edit-form input,
+  .annonce-edit-form textarea,
+  .annonce-edit-form select,
+  .annonce-summary-card .btn {
+    font-size: 0.95rem;
+  }
+
+  .annonce-summary-card h1,
+  .annonce-price {
+    font-size: 1.6rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .annonce-summary-card h1,
+  .annonce-price {
+    font-size: 1.35rem;
+  }
+
+  .annonce-meta {
+    font-size: 0.82rem;
+  }
+
+  .annonce-owner-actions {
+    gap: 8px;
+  }
+}
