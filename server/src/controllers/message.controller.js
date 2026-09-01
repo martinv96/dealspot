@@ -180,6 +180,10 @@ export async function sendMessage(req, res) {
       return res.status(400).json({ message: "Le message ne peut pas etre vide." });
     }
 
+    if (contenu.length > 2000) {
+      return res.status(400).json({ message: "Le message ne peut pas dépasser 2 000 caractères." });
+    }
+
     const receiver = await User.findByPk(receiverId, { attributes: ["id"] });
     if (!receiver) {
       return res.status(404).json({ message: "Destinataire introuvable." });

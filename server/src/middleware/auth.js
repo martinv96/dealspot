@@ -45,6 +45,27 @@ export async function adminMiddleware(req, res, next) {
   }
 }
 
+export async function vendeurMiddleware(req, res, next) {
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: "Token invalide." });
+    }
+
+    const user = await User.findByPk(req.user.id, {
+      attributes: ["id", "role"]
+    });
+
+    if (!user || user.role !== "vendeur") {
+      return res.status(403).json({ message: "Accès vendeur requis pour créer une annonce." });
+    }
+
+    req.user.role = user.role;
+    return next();
+  } catch {
+    return res.status(500).json({ message: "Erreur serveur." });
+  }
+}
+
 
 
 

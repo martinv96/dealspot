@@ -195,6 +195,15 @@ function AdminRoute({ children }) {
   return children;
 }
 
+function SellerRoute({ children }) {
+  const { isAuthenticated, loading, user } = useAuth();
+
+  if (loading) return <div className="center-loader">Chargement en cours...</div>;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (user?.role !== "vendeur") return <Navigate to="/" replace />;
+  return children;
+}
+
 export default function App() {
   return (
     <>
@@ -234,17 +243,17 @@ export default function App() {
         <Route
           path="/creer-annonce"
           element={
-            <ProtectedRoute>
+            <SellerRoute>
               <CreateAnnonce />
-            </ProtectedRoute>
+            </SellerRoute>
           }
         />
         <Route
           path="/mes-annonces"
           element={
-            <ProtectedRoute>
+            <SellerRoute>
               <MyAnnoncesPage />
-            </ProtectedRoute>
+            </SellerRoute>
           }
         />
         <Route

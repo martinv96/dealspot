@@ -18,6 +18,7 @@ if (isCloudinaryEnabled) {
   });
 }
 
+// Extrait l'identifiant Cloudinary nécessaire pour supprimer une image.
 function extractPublicIdFromUrl(url) {
   if (typeof url !== "string" || !url.includes("/upload/")) {
     return null;
@@ -40,6 +41,7 @@ function extractPublicIdFromUrl(url) {
   return tail.slice(0, lastDotIndex);
 }
 
+// Supprime le fichier temporaire sans interrompre la requête en cas d'erreur.
 async function safeUnlink(filePath) {
   if (!filePath) return;
 
@@ -50,6 +52,7 @@ async function safeUnlink(filePath) {
   }
 }
 
+// Envoie les images vers Cloudinary ou retourne leurs chemins locaux en secours.
 export async function uploadImages(files, options = {}) {
   const list = Array.isArray(files) ? files : [];
   if (list.length === 0) {
@@ -80,6 +83,7 @@ export async function uploadImages(files, options = {}) {
   return uploadedUrls;
 }
 
+// Supprime de Cloudinary les images associées aux URL fournies.
 export async function deleteImagesByUrls(urls) {
   const list = Array.isArray(urls) ? urls.filter((value) => typeof value === "string") : [];
   if (!isCloudinaryEnabled || list.length === 0) {

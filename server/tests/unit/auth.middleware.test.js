@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import jwt from "jsonwebtoken";
 import db from "../../src/models/index.js";
-import { authMiddleware, adminMiddleware } from "../../src/middleware/auth.js";
+import { authMiddleware, adminMiddleware, vendeurMiddleware } from "../../src/middleware/auth.js";
 
 // simulation du comportement de la réponse express
 
@@ -31,6 +31,48 @@ function createRes() {
   };
 }
 
+
+    test("vendeurMiddleware refuse un acheteur même si le token prétend être vendeur", async () => {
+      const originalFindByPk = db.User.findByPk;
+      db.User.findByPk = async () => ({ id: 42, role: "acheteur" });
+
+      const req = { user: { id: 42, role: "vendeur" } };
+      const res = createRes();
+      let called = false;
+
+      try {
+        await vendeurMiddleware(req, res, () => {
+          called = true;
+        });
+      } finally {
+        db.User.findByPk = originalFindByPk;
+      }
+
+      assert.equal(called, false);
+      assert.equal(res.statusCode, 403);
+      assert.equal(res.body.message, "Accès vendeur requis pour créer une annonce.");
+    });
+
+    test("vendeurMiddleware autorise un vendeur confirmé en BDD", async () => {
+      const originalFindByPk = db.User.findByPk;
+      db.User.findByPk = async () => ({ id: 42, role: "vendeur" });
+
+      const req = { user: { id: 42, role: "acheteur" } };
+      const res = createRes();
+      let called = false;
+
+      try {
+        await vendeurMiddleware(req, res, () => {
+          called = true;
+        });
+      } finally {
+        db.User.findByPk = originalFindByPk;
+      }
+
+      assert.equal(called, true);
+      assert.equal(req.user.role, "vendeur");
+      assert.equal(res.statusCode, 200);
+    });
 // test n°1 : refus si pas de token
 
 test("authMiddleware refuse si token manquant", () => {

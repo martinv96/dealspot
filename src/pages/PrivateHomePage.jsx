@@ -68,7 +68,9 @@ export default function PrivateHomePage() {
 
         const [publishedResponse, mineResponse] = await Promise.all([
           api.get("/annonces", { params: { limit: 6, page: 1 } }),
-          api.get("/annonces/me", { params: { limit: 6, page: 1, statut: "active" } })
+          user?.role === "vendeur"
+            ? api.get("/annonces/me", { params: { limit: 6, page: 1, statut: "active" } })
+            : Promise.resolve({ data: { annonces: [] } })
         ]);
 
         setPublishedAnnonces(publishedResponse.data?.annonces || []);
@@ -81,7 +83,7 @@ export default function PrivateHomePage() {
     }
 
     loadDashboardData();
-  }, []);
+  }, [user?.role]);
 
   const publishedCards = useMemo(
     () => publishedAnnonces.map(mapAnnonceToCard),
@@ -113,15 +115,17 @@ export default function PrivateHomePage() {
         </section>
 
 
-        <section className="section listings-section">
-          <div className="section-head">
-            <h2>Mes annonces en 1 clic</h2>
-            <Link to="/mes-annonces" className="btn btn-outline">Toutes mes annonces</Link>
-          </div>
-          {isLoading ? <p className="center-loader">Chargement des annonces...</p> : null}
-          {!isLoading && error ? <p className="form-error">{error}</p> : null}
-          {!isLoading && !error ? <ProductGrid items={myActiveCards} showBadge /> : null}
-        </section>
+        {user?.role === "vendeur" ? (
+          <section className="section listings-section">
+            <div className="section-head">
+              <h2>Mes annonces en 1 clic</h2>
+              <Link to="/mes-annonces" className="btn btn-outline">Toutes mes annonces</Link>
+            </div>
+            {isLoading ? <p className="center-loader">Chargement des annonces...</p> : null}
+            {!isLoading && error ? <p className="form-error">{error}</p> : null}
+            {!isLoading && !error ? <ProductGrid items={myActiveCards} showBadge /> : null}
+          </section>
+        ) : null}
 
         <CategoryExplorerSection selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} />
         <section className="section listings-section">

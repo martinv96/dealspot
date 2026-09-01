@@ -60,7 +60,7 @@ function getCachedResults(cacheKey) {
 }
 
 function setCachedResults(cacheKey, results) {
-  // évite de rappeler l'api externe pour les mêmes requêtes fréquentes
+  // évite de rappeler l'api externe pour les mêmes requêtes fréquentes (cache 6h)
   geocodeCache.set(cacheKey, {
     results,
     expiresAt: Date.now() + CACHE_TTL_MS

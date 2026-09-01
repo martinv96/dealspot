@@ -99,8 +99,12 @@ export default function PrivateHeader() {
 
       <nav className={`nav nav-private${isMenuOpen ? " open" : ""}`}>
         <Link to="/" className="nav-link" onClick={closeMenu}><FaHome /> Accueil</Link>
-        <Link to="/mes-annonces" className="nav-link" onClick={closeMenu}><FaRegFileAlt /> Mes annonces</Link>
-        <Link to="/creer-annonce" className="nav-link" onClick={closeMenu}><FaRegFileAlt /> Créer une annonce</Link>
+        {user?.role === "vendeur" ? (
+          <>
+            <Link to="/mes-annonces" className="nav-link" onClick={closeMenu}><FaRegFileAlt /> Mes annonces</Link>
+            <Link to="/creer-annonce" className="nav-link" onClick={closeMenu}><FaRegFileAlt /> Créer une annonce</Link>
+          </>
+        ) : null}
         <Link to="/favoris" className="nav-link nav-favoris" onClick={closeMenu}>
           {favorites.length > 0 ? <FaHeart className="nav-heart-active" /> : <FaRegHeart />}
           Favoris
